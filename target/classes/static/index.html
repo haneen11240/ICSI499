@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Math AI Tester</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="banner">
+        Math AI Tester
+      </div>
+<div class="info">
+    
+  <canvas id="renderCanvas"></canvas>
+  <!-- Include Babylon.js and its glTF loader -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylon.glTF2FileLoader.min.js"></script>
+<p></p>
+  <script >
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true,{alpha:true});
+
+    let model;
+    const createScene = () => {
+      const scene = new BABYLON.Scene(engine);
+      scene.clearColor =new BABYLON.Color4(0,0,0,0);
+      const camera = new BABYLON.ArcRotateCamera(
+              "Camera",
+              Math.PI / 2,    // alpha (horizontal angle)
+              Math.PI / 2,    // beta (vertical angle)
+              5,              // radius (distance from target; adjust as needed)
+              BABYLON.Vector3.Zero(), // target at (0, 0, 0)
+              scene
+      );
+      camera.attachControl(canvas, true);
+
+      new BABYLON.HemisphericLight("hemiLight",new BABYLON.Vector3(0,1,0),scene);
+
+      BABYLON.SceneLoader.ImportMesh(
+              "",           
+              "./",         // Folder path; change to "models/" if your file is in a models folder
+              "Calculator.glb",  // The filename of your GLB file
+              scene,
+              (meshes, particleSystems, skeletons, animationGroups) => {
+                // Center the model by setting each mesh's position to (0,0,0)
+                model= new BABYLON.TransformNode("model",scene);
+                meshes.forEach(mesh => {
+                  mesh.parent=model;
+                  mesh.position = BABYLON.Vector3.Zero();
+                });
+
+               
+              }
+      );
+
+      return scene;
+    };
+
+    const scene = createScene();
+
+    // Render loop
+    engine.runRenderLoop(() => {
+      if(model){
+        model.rotation.x += 0.01;
+        model.rotation.y += 0.01;
+      }
+      scene.render();
+    });
+    // Adjust engine size on browser window resize
+    window.addEventListener("resize", () => engine.resize());
+  </script>
+
+  <p></p>
+<!--  <button type="submit">Sign Up</button>-->
+<!--  <button type="submit">Login</button>-->
+
+<!--  <A href="SignUp.html">Sign Up!</A>-->
+<!--  <p></p>-->
+<!--  <A href="Login.html">Login!</A>-->
+
+    <div class="UserInput">
+        <input class="UserInput" type="text" id="username" placeholder="Enter your username">
+    </div>
+    <br>
+    <div class="UserInput">
+        <textarea id="mathProblem" rows="4" cols="50" placeholder="Enter your math problem"></textarea>
+        <p></p>
+    </div>
+
+    <div class="UserInput">
+        <input type="file" id="imageUpload" accept="image/*" placeholder="Upload an image">  
+        <button onclick="uploadImage()">Upload Image</button>
+    </div>
+    
+
+    <br>
+    <br>
+    <button onclick="submitProblem()">Submit Problem</button>
+    
+    <div class="response">
+        <h2>Response:</h2>
+        <div class="response-container">
+            <p  id="response"></p>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <script>
+    function uploadImage() {
+    const fileInput = document.getElementById("imageUpload");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select an image.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    fetch("http://localhost:8082/api/chat/uploadImage", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("response").innerText = "Image uploaded successfully: " + data.message;
+    })
+    .catch(error => {
+        document.getElementById("response").innerText = "Error uploading image: " + error.message;
+    });
+}
+
+    function submitProblem() {
+        const username = document.getElementById("username").value.trim();
+        const problem = document.getElementById("mathProblem").value.trim();
+
+        if (!username || !problem) {
+            document.getElementById("response").innerText = "Error: Please enter a username and a math problem.";
+            return;
+        }
+
+        fetch("http://localhost:8082/api/chat/processText", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user: username,
+                question: problem
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("HTTP error! Status: " + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            let resp = data.response;
+            resp = resp.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+            resp = resp.replace(/(\d+)\.\s*/g, "<br><b>$1.</b> ");
+            resp = resp.replace(/\n/g, "<br>");
+            // ✅ Display the extracted answer properly
+            document.getElementById("response").innerHTML = resp;
+        })
+        .catch(error => {
+            document.getElementById("response").innerText = "Error: " + error.message;
+        });
+    }
+</script>
+</body>
+</html>

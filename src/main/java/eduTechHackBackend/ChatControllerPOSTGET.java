@@ -35,7 +35,7 @@ public class ChatControllerPOSTGET {
         System.out.println("🔥 processText() method was called!");
 
         if (request == null || request.isEmpty()) {
-            System.out.println("❌ ERROR: Received an empty request body.");
+            System.out.println("ERROR: Received an empty request body.");
             return Map.of("error", "Empty request body");
         }
 
@@ -51,8 +51,8 @@ public class ChatControllerPOSTGET {
         String answer = openAiService.callGeminiAI(prompt);
         String extractedAnswer = extractAnswerFromResponse(answer);
 
-        System.out.println("📝 Extracted Answer: " + extractedAnswer);
-        System.out.println("🔍 Attempting to save chat to Firestore...");
+        System.out.println("Extracted Answer: " + extractedAnswer);
+        System.out.println("Attempting to save chat to Firestore...");
 
         try {
             Map<String, Object> chatLog = new HashMap<>();
@@ -146,3 +146,4 @@ public class ChatControllerPOSTGET {
     }
     
 }
+

@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "TechBot for Google Meet",
+    "version": "1.0",
+    "description": "Add your AI Tech Consultant to a Google Meet.",
+    "permissions": ["scripting", "activeTab", "tabs"],
+    "host_permissions": ["*://meet.google.com/*"],
+    "content_scripts": [
+      {
+        "matches": ["*://meet.google.com/*"],
+        "js": ["inject.js"]
+      }
+    ],
+    "action": {
+      "default_title": "Add TechBot"
+    }
+  }  

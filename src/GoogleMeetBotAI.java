@@ -7,45 +7,87 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
 
 public class GoogleMeetBotAI {
     public static void main(String[] args) throws InterruptedException {
         System.setProperty("webdriver.chrome.driver", "C:\\Users\\Enea\\Documents\\TestFor499\\chromedriver\\chromedriver.exe");
 
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("user-data-dir=C:\\Users\\Enea\\AppData\\Local\\Google\\Chrome\\User Data");
-        options.addArguments("--profile-directory=Default"); // enea def chrome
-
-        // chrome backups
-        options.addArguments("--remote-debugging-port=9222");
-        options.addArguments("--disable-extensions");
+        options.addArguments("user-data-dir=C:\\Users\\Enea\\Documents\\ICSI499\\bot-profile");
         options.addArguments("--no-sandbox");
-        options.addArguments("--disable-gpu");
-        options.addArguments("--disable-dev-shm-usage");
-
+        
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("profile.default_content_setting_values.media_stream_mic", 2);
+        prefs.put("profile.default_content_setting_values.media_stream_camera", 2);       
+        options.setExperimentalOption("prefs", prefs);
         WebDriver driver = new ChromeDriver(options);
-        driver.get("https://meet.google.com/ner-zvxo-uhd");
+        
+        if (args.length < 1) {
+            System.out.println("No Meet URL provided.");
+            return;
+        }
 
-        // delay for page to load
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        String meetUrl = args[0];
+        driver.get(meetUrl);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
         try {
-            // mic settings
-            WebElement micButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@aria-label='Turn off microphone']")));
-            micButton.click();
+            // 👤 Enter guest name (if required)
+            try {
+                WebDriverWait nameWait = new WebDriverWait(driver, Duration.ofSeconds(5));
+                WebElement nameInput = nameWait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//input[@aria-label='Your name']")));
+                nameInput.clear();
+                nameInput.sendKeys("TechBot");
+                System.out.println("Entered guest name: TechBot");
+            } catch (Exception e) {
+                System.out.println("No name field found — skipping.");
+            }
 
-            // cam settings
-            WebElement cameraButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@aria-label='Turn off camera']")));
-            cameraButton.click();
+            // 🎤 Turn off mic
+            try {
+                WebElement micButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[@aria-label='Turn off microphone']")));
+                micButton.click();
+                System.out.println("Mic turned off.");
+            } catch (Exception e) {
+                System.out.println("Mic already off or not found.");
+            }
 
-            // join or ask
-            WebElement joinButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(), 'Ask to join')]")));
-            joinButton.click();
+            // 📷 Turn off cam
+            try {
+                WebElement cameraButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//div[@aria-label='Turn off camera']")));
+                cameraButton.click();
+                System.out.println("Camera turned off.");
+            } catch (Exception e) {
+                System.out.println("Camera already off or not found.");
+            }
 
-            System.out.println("Bot has joined the meeting!");
+            // 🙋 Click join/ask button
+            try {
+                WebElement askButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[contains(text(), 'Ask to join')]")));
+                askButton.click();
+                System.out.println("Bot clicked 'Ask to join'");
+            } catch (Exception ex1) {
+                try {
+                    WebElement joinNowButton = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//span[contains(text(), 'Join now')]")));
+                    joinNowButton.click();
+                    System.out.println("Bot clicked 'Join now'");
+                } catch (Exception ex2) {
+                    System.out.println("No join button found.");
+                    ex2.printStackTrace();
+                }
+            }
+
+            // 🧠 Loop for prompt input → AI response
             Scanner scanner = new Scanner(System.in);
-
-            while(true){
+            while (true) {
                 System.out.print("You: ");
                 String prompt = scanner.nextLine();
 
@@ -65,9 +107,9 @@ public class GoogleMeetBotAI {
             }
 
             scanner.close();
-    
+
         } catch (Exception e) {
-            System.out.println("ERROR: Could not find Google Meet elements.");
+            System.out.println("ERROR: Could not complete join process.");
             e.printStackTrace();
         }
     }

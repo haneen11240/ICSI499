@@ -35,7 +35,7 @@ public class GoogleMeetBotAI {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
         try {
-            // 👤 Enter guest name (if required)
+            // Enter guest name (if required)
             try {
                 WebDriverWait nameWait = new WebDriverWait(driver, Duration.ofSeconds(5));
                 WebElement nameInput = nameWait.until(ExpectedConditions.visibilityOfElementLocated(
@@ -47,7 +47,7 @@ public class GoogleMeetBotAI {
                 System.out.println("No name field found — skipping.");
             }
 
-            // 🎤 Turn off mic
+            // Turn off mic
             try {
                 WebElement micButton = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//div[@aria-label='Turn off microphone']")));
@@ -57,7 +57,7 @@ public class GoogleMeetBotAI {
                 System.out.println("Mic already off or not found.");
             }
 
-            // 📷 Turn off cam
+            // Turn off cam
             try {
                 WebElement cameraButton = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//div[@aria-label='Turn off camera']")));
@@ -67,7 +67,7 @@ public class GoogleMeetBotAI {
                 System.out.println("Camera already off or not found.");
             }
 
-            // 🙋 Click join/ask button
+            // Click join/ask button
             try {
                 WebElement askButton = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//span[contains(text(), 'Ask to join')]")));
@@ -85,7 +85,7 @@ public class GoogleMeetBotAI {
                 }
             }
 
-            // 🧠 Loop for prompt input → AI response
+            // Loop for prompt input → AI response
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 System.out.print("You: ");

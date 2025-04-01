@@ -7,8 +7,8 @@ import threading
 from collections import deque
 from groq import Groq
 
-GROQ_API_KEY = "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"       # Replace with your Groq API key
-VOICERSS_API_KEY = "7283c2b7a66c4359ae5535918c66da69"  # Replace with your Voice RSS API key
+GROQ_API_KEY = "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"
+VOICERSS_API_KEY = "7283c2b7a66c4359ae5535918c66da69"
 TRIGGER_PHRASES = ["what do you think aura", "aura what do you think"]
 VOICE_LANGUAGE = "en-us"
 
@@ -37,7 +37,7 @@ def speak(text):
 
         pygame.mixer.quit()
     else:
-        print(f"❌ VoiceRSS error: {response.status_code} - {response.text}")
+        print(f"VoiceRSS error: {response.status_code} - {response.text}")
 
 # ======= AI LOGIC =======
 def get_ai_response(prompt):
@@ -98,9 +98,9 @@ def listen_loop():
                 threading.Thread(target=handle_response, args=(full_context,)).start()
 
         except sr.UnknownValueError:
-            print("🤷 Could not understand audio.")
+            print("Could not understand audio.")
         except sr.RequestError as e:
-            print(f"⚠️ Speech recognition error: {e}")
+            print(f"Speech recognition error: {e}")
 
 # ======= MAIN =======
 if __name__ == "__main__":

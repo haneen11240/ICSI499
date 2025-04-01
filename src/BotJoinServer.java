@@ -56,7 +56,7 @@ public class BotJoinServer {
                 os.write(response.getBytes());
                 os.close();
             } else {
-                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+                exchange.sendResponseHeaders(405, -1); // method failed
             }
         });        
 
@@ -66,7 +66,7 @@ public class BotJoinServer {
     }
 
     private static String extractUrlFromJson(String json) {
-        // Very simple JSON parser (expects {"url": "https://meet.google.com/..."})
+        // JSON parser (expects {"url": "https://meet.google.com/..."})
         String prefix = "\"url\":\"";
         int start = json.indexOf(prefix) + prefix.length();
         int end = json.indexOf("\"", start);

@@ -40,9 +40,9 @@ public class GoogleMeetBotAI {
                 WebDriverWait nameWait = new WebDriverWait(driver, Duration.ofSeconds(5));
                 WebElement nameInput = nameWait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath("//input[@aria-label='Your name']")));
-                nameInput.clear();
-                nameInput.sendKeys("TechBot");
-                System.out.println("Entered guest name: TechBot");
+                    nameInput.clear();
+                    nameInput.sendKeys("TechBot");
+                    System.out.println("Entered guest name: TechBot");
             } catch (Exception e) {
                 System.out.println("No name field found — skipping.");
             }
@@ -51,8 +51,8 @@ public class GoogleMeetBotAI {
             try {
                 WebElement micButton = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//div[@aria-label='Turn off microphone']")));
-                micButton.click();
-                System.out.println("Mic turned off.");
+                    micButton.click();
+                    System.out.println("Mic turned off.");
             } catch (Exception e) {
                 System.out.println("Mic already off or not found.");
             }
@@ -61,8 +61,8 @@ public class GoogleMeetBotAI {
             try {
                 WebElement cameraButton = wait.until(ExpectedConditions.elementToBeClickable(
                     By.xpath("//div[@aria-label='Turn off camera']")));
-                cameraButton.click();
-                System.out.println("Camera turned off.");
+                    cameraButton.click();
+                    System.out.println("Camera turned off.");
             } catch (Exception e) {
                 System.out.println("Camera already off or not found.");
             }

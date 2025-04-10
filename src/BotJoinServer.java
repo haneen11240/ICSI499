@@ -3,10 +3,24 @@ import com.sun.net.httpserver.HttpExchange;
 import java.net.InetSocketAddress;
 import java.io.*;
 import java.util.stream.Collectors;
+import java.time.Duration;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpExchange;
 
 public class BotJoinServer {
+
+    private static WebDriver botDriver = null;
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        System.setProperty("webdriver.chrome.driver", "C:\\Users\\Enea\\Documents\\TestFor499\\chromedriver\\chromedriver.exe");
 
         server.createContext("/join", exchange -> {
             String requestMethod = exchange.getRequestMethod();
@@ -58,7 +72,26 @@ public class BotJoinServer {
             } else {
                 exchange.sendResponseHeaders(405, -1); // method failed
             }
-        });        
+        });
+        
+        server.createContext("/remove", exchange ->{
+            System.out.println("Removing Ora");
+            if("POST".equals(exchange.getRequestMethod())){
+                System.out.println("Remove request recieved");
+                if (botDriver != null){
+                    try{
+                        WebDriverWait wait = new WebDriverWait(botDriver, Duration.ofSeconds(2));
+                        WebElement leaveButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//div[@aria-label='Leave call']")));
+
+                        leaveButton.click();
+                        System.out.println("Ora sucessfully left");
+                        botDriver.quit();
+                    }catch(Exception e){
+                        System.out.println("Ora leave failed: " + e);
+                    }
+                }
+            }
+        });
 
         server.setExecutor(null);
         server.start();

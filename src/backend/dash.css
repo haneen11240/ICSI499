@@ -1,0 +1,38 @@
+/* dashboard.css */
+body {
+    font-family: sans-serif;
+    padding: 2rem;
+    background: #f4f4f4;
+  }
+  
+  .section {
+    background: white;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  
+  label, input, button {
+    display: block;
+    margin: 0.5rem 0;
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  #logoutBtn {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .transcript {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    background: #eef;
+    border-left: 3px solid #6c63ff;
+  }  

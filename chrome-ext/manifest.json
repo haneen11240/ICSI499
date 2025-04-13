@@ -1,25 +1,36 @@
 {
-    "manifest_version": 3,
-    "name": "TechBot for Google Meet",
-    "version": "1.0",
-    "description": "Add your AI Tech Consultant to a Google Meet.",
-    "permissions": ["scripting", "activeTab", "tabs"],
-    "host_permissions": ["*://meet.google.com/*"],
-    "browser_action": {
+  "manifest_version": 3,
+  "name": "Ora AI Assistant",
+  "version": "1.0",
+  "description": "Launch Ora AI into your Google Meet session.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["http://localhost:5000/"],
+  "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
-      }
-    },
-    "content_scripts": [
-      {
-        "matches": ["*://meet.google.com/*"],
-        "js": ["inject.js"]
-      }
-    ],
-    "action": {
-      "default_title": "Add TechBot"
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["relay.js", "inject.js"]
     }
-  }  
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "node_modules/firebase/**",
+        "firebase-wrapper.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

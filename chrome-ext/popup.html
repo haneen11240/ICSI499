@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ora Meet Launcher</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      width: 240px;
+    }
+    button {
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h3>Ora Launcher</h3>
+  <div id="auth-section">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <button id="signupBtn">Sign Up</button>
+    <button id="googleBtn">Sign in with Google</button>
+  </div>
+
+  <div id="main-section" style="display: none;">
+    <p>Welcome <span id="user-email"></span></p>
+    <button id="launchBtn">Launch Ora</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

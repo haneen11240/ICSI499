@@ -1,0 +1,1 @@
+{"text": " speech, test speech.", "segments": [{"id": 0, "seek": 0, "start": 0.0, "end": 4.32, "text": " speech, test speech.", "tokens": [50365, 6218, 11, 1500, 6218, 13, 50581], "temperature": 0.0, "avg_logprob": -0.8659376502037048, "compression_ratio": 0.8333333333333334, "no_speech_prob": 5.2249170268137135e-11}], "language": "English"}

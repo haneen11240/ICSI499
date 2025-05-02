@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "background.js",
   "scripts": {
+    "build": "vite build",
+    "watch": "vite builld --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -10,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "firebase": "^11.6.0"
+    "firebase": "^11.6.0",
+    "vite": "^6.3.3"
   }
 }

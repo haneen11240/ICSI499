@@ -1,13 +1,11 @@
-// popup.js
+import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  createUserWithEmailAndPassword,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
-} from "./firebase-wrapper.js";
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC_E91yz5ARm3vbq_55JfHjfYr0FJ3oB_o",
@@ -16,91 +14,114 @@ const firebaseConfig = {
   storageBucket: "ora-tech-79eae.firebasestorage.app",
   messagingSenderId: "62701837639",
   appId: "1:62701837639:web:42c9ec787844fa4de9c062",
-  measurementId: "G-DSE8BTDQQH"
+  measurementId: "G-DSE8BTDQQH",
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
-// DOM
-const emailInput = document.getElementById("email");
-const passInput = document.getElementById("password");
-const loginBtn = document.getElementById("loginBtn");
-const signupBtn = document.getElementById("signupBtn");
-const googleBtn = document.getElementById("googleBtn");
-const launchBtn = document.getElementById("launchBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const authSection = document.getElementById("auth-section");
-const mainSection = document.getElementById("main-section");
-const userSpan = document.getElementById("user-email");
-
-// Auth handlers
-loginBtn.addEventListener("click", () => {
-  const email = emailInput.value;
-  const password = passInput.value;
-  signInWithEmailAndPassword(auth, email, password).catch(err =>
-    alert("Login failed: " + err.message)
-  );
-});
-
-signupBtn.addEventListener("click", () => {
-  const email = emailInput.value;
-  const password = passInput.value;
-  createUserWithEmailAndPassword(auth, email, password).catch(err =>
-    alert("Signup failed: " + err.message)
-  );
-});
-
-googleBtn.addEventListener("click", () => {
-  signInWithPopup(auth, provider).catch(err =>
-    alert("Google login failed: " + err.message)
-  );
-});
-
-logoutBtn.addEventListener("click", () => {
-  signOut(auth);
-});
-
-// Listen to auth state
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    authSection.style.display = "none";
-    mainSection.style.display = "block";
-    userSpan.textContent = user.email;
+    document.getElementById("auth-section").style.display = "none";
+    document.getElementById("main-section").style.display = "block";
+    document.getElementById("user-email").innerText = user.email;
   } else {
-    authSection.style.display = "block";
-    mainSection.style.display = "none";
+    document.getElementById("auth-section").style.display = "block";
+    document.getElementById("main-section").style.display = "none";
   }
 });
 
-// Launch Ora
-launchBtn.addEventListener("click", () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    alert("✅ Logged in successfully.");
+  } catch (error) {
+    console.error(error);
+    alert("❌ Login failed: " + error.message);
+  }
+});
+
+document.getElementById("signupBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    alert("✅ Account created successfully.");
+  } catch (error) {
+    console.error(error);
+    alert("❌ Signup failed: " + error.message);
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  alert("✅ Logged out successfully.");
+});
+
+document.getElementById("launchBtn").addEventListener("click", async () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const meetUrl = tabs[0].url;
+
+    if (!meetUrl.includes("https://meet.google.com")) {
+      alert("⚠️ Please open a Google Meet tab first.");
+      return;
+    }
+
     const user = auth.currentUser;
-
     if (!user) {
-      alert("Please sign in first.");
+      alert("⚠️ Please sign in first!");
       return;
     }
 
-    if (!meetUrl.includes("meet.google.com")) {
-      alert("This is not a Google Meet tab.");
-      return;
-    }
+    const idToken = await user.getIdToken();
 
-    fetch("http://localhost:5000/start-bot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        meetUrl,
-        userId: user.uid,
-        platform: "Google Meet"
-      })
-    })
-      .then(res => res.json())
-      .then(data => alert("Ora launched!"))
-      .catch(err => alert("Failed to launch Ora: " + err.message));
+    try {
+      const response = await fetch("http://localhost:5000/start-bot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          meetUrl: meetUrl,
+          userId: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${errorText}`);
+      }
+
+      console.log("✅ Launch Ora backend responded successfully.");
+
+      // ✅ Inject UID into the Meet tab first
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tabs[0].id },
+          func: (uid) => {
+            localStorage.setItem("ora_uid", uid);
+            console.log("✅ Injected UID into localStorage:", uid);
+          },
+          args: [user.uid],
+        },
+        () => {
+          // ✅ Now inject inject.js
+          chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            files: ["inject.js"],
+          });
+        }
+      );
+
+      alert("✅ Ora is now active on your Meet!");
+    } catch (error) {
+      console.error("❌ Failed to launch Ora:", error);
+      alert("Failed to launch Ora. Please try again.");
+    }
   });
 });

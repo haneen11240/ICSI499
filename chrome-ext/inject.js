@@ -1,31 +1,97 @@
-(function () {
-    if (!window.location.href.includes("meet.google.com")) return;
-  
-    const existingButton = document.getElementById("ora-launch-button");
-    if (existingButton) return;
-  
-    const container = document.createElement("div");
-    container.style.position = "fixed";
-    container.style.bottom = "80px";
-    container.style.right = "40px";
-    container.style.zIndex = 9999;
-    container.style.padding = "10px";
-    container.style.backgroundColor = "#ffffff";
-    container.style.border = "1px solid #ccc";
-    container.style.borderRadius = "6px";
-    container.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
-  
-    const launchBtn = document.createElement("button");
-    launchBtn.id = "ora-launch-button";
-    launchBtn.innerText = "Launch Ora";
-    launchBtn.style.padding = "6px 12px";
-    launchBtn.style.marginBottom = "5px";
-  
-    // ✅ Just post a message — no extension API here
-    launchBtn.onclick = () => {
-      window.postMessage({ type: "ORA_TRIGGER_LAUNCH" }, "*");
-    };
-  
-    container.appendChild(launchBtn);
-    document.body.appendChild(container);
-  })();  
+(async function () {
+  if (!window.location.href.includes("meet.google.com")) return;
+
+  console.log("Injecting Ora with Mic Recorder...");
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    source.connect(analyser);
+
+    const meter = document.createElement("div");
+    meter.style.position = "fixed";
+    meter.style.bottom = "80px";
+    meter.style.right = "20px";
+    meter.style.width = "100px";
+    meter.style.height = "10px";
+    meter.style.border = "1px solid #ccc";
+    meter.style.background = "#222";
+    meter.style.zIndex = 999999;
+    document.body.appendChild(meter);
+
+    const level = document.createElement("div");
+    level.style.height = "100%";
+    level.style.background = "#4caf50";
+    level.style.width = "0%";
+    meter.appendChild(level);
+
+    function updateMeter() {
+      analyser.getByteTimeDomainData(dataArray);
+      const rms = Math.sqrt(
+        dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length
+      );
+      const percent = Math.min((rms / 128) * 100, 100);
+      level.style.width = `${percent}%`;
+      requestAnimationFrame(updateMeter);
+    }
+    updateMeter();
+
+    const options = { mimeType: "audio/webm;codecs=opus" };
+    const uid = localStorage.getItem("ora_uid");
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      console.warn("Codec not supported.");
+      return;
+    }
+
+    function startRecordingLoop() {
+      const mediaRecorder = new MediaRecorder(stream, options);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", blob, "chunk.webm");
+        formData.append("uid", uid); // ✅ send UID
+
+        try {
+          const response = await fetch("http://localhost:5000/speech-to-text", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          console.log("📥 Server response:", result);
+
+          if (result.triggered && result.response) {
+            const utterance = new SpeechSynthesisUtterance(result.response);
+            utterance.lang = "en-US";
+            speechSynthesis.speak(utterance);
+          }
+        } catch (e) {
+          console.error("❌ Error sending audio:", e);
+        }
+
+        setTimeout(startRecordingLoop, 2000);
+      };
+
+      mediaRecorder.start();
+      console.log("🎙️ Recording started...");
+      setTimeout(() => {
+        mediaRecorder.stop();
+        console.log("🛑 Recording stopped after 5s");
+      }, 5000);
+    }
+
+    startRecordingLoop();
+  } catch (error) {
+    console.error("Mic capture failed:", error);
+  }
+})();

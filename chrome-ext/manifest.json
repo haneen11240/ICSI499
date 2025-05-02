@@ -1,36 +1,27 @@
 {
   "manifest_version": 3,
-  "name": "Ora AI Assistant",
+  "name": "Ora AI Tech Consultant",
   "version": "1.0",
-  "description": "Launch Ora AI into your Google Meet session.",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["http://localhost:5000/"],
+  "permissions": [
+    "tabs",
+    "identity",
+    "alarms",
+    "scripting",
+    "audioCapture"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "dist/background.bundle.js"
   },
   "content_scripts": [
     {
       "matches": ["https://meet.google.com/*"],
-      "js": ["relay.js", "inject.js"]
+      "js": ["inject.js", "relay.js"]
     }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "node_modules/firebase/**",
-        "firebase-wrapper.js"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  }
+  ]
 }

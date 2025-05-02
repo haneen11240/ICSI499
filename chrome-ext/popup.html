@@ -1,37 +1,126 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Ora Meet Launcher</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 1rem;
-      width: 240px;
-    }
-    button {
-      margin: 0.5rem 0;
-      padding: 0.5rem;
-      width: 100%;
-    }
-  </style>
-</head>
-<body>
-  <h3>Ora Launcher</h3>
-  <div id="auth-section">
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="loginBtn">Login</button>
-    <button id="signupBtn">Sign Up</button>
-    <button id="googleBtn">Sign in with Google</button>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+    <title>Ora Meet Launcher</title>
+    <!-- <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"></script> -->
+    <script src="./dist/popup.bundle.js" type="module"></script>
+    <style>
+      /* Popup Container */
+      body {
+  font-family: 'Audiowide', sans-serif;
+  background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+  border: 2px solid #c084fc;
+  border-radius: 25px;
+  box-shadow: 0 0 30px 10px #9b5de5;
+  width: 300px;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  margin: auto;
+  color: #f8f8f8;
+}
 
-  <div id="main-section" style="display: none;">
-    <p>Welcome <span id="user-email"></span></p>
-    <button id="launchBtn">Launch Ora</button>
-    <button id="logoutBtn">Logout</button>
-  </div>
+h3 {
+  font-size: 2rem;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 20px #c084fc;
+}
 
-  <script type="module" src="popup.js"></script>
-</body>
+input {
+  width: 90%;
+  padding: 0.8rem;
+  margin: 0.6rem 0;
+  background: #202020;
+  color: white;
+  border: 2px solid #c084fc;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+input:focus {
+  outline: none;
+  background: #292929;
+  box-shadow: 0 0 10px #c084fc;
+}
+
+button {
+  margin-top: 0.7rem;
+  width: 90%;
+  padding: 0.8rem;
+  background-color: #ffffff;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  border-radius: 30px;
+  /* box-shadow: 0 0 15px #c084fc; */
+  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+  cursor: pointer;
+  background-color: #c084fc;
+  color: white;
+  transform: scale(1.08);
+  box-shadow: 0 0 25px #c084fc;
+}
+
+.logo-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  box-shadow: 0 0 25px 8px #c084fc;
+  background-color: #111;
+}
+
+.logo-text {
+  font-size: 1.8rem;
+  color: white;
+  text-shadow: 0 0 15px #c084fc;
+  margin: 0;
+}
+
+#auth-section,
+#main-section {
+  margin-top: 1rem;
+}
+
+
+
+    </style>
+  </head>
+  <body>
+    <div class="logo-header">
+      <img src="ORA.png" alt="Ora Logo" class="logo">
+      <h3 class="logo-text">Ora Launcher</h3>
+    </div>
+    <div id="auth-section">
+      <input  class="fancy-font" type="email" id="email" placeholder="Email" />
+      <input class="fancy-font" type="password" id="password" placeholder="Password" />
+      <button class="fancy-font" id="loginBtn">Login</button>
+      <button class="fancy-font" id="signupBtn">Sign Up</button>
+      <button class="fancy-font" id="googleBtn">Sign in with Google</button>
+    </div>
+
+    <div id="main-section" style="display: none">
+      <p>Welcome <span id="user-email"></span></p>
+      <button class="fancy-font" id="launchBtn">Launch Ora</button>
+      <button class="fancy-font" id="logoutBtn">Logout</button>
+    </div>
+  </body>
 </html>

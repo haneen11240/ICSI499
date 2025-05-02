@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ora User Dashboard</title>
+
+    <!-- Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Audiowide', sans-serif;
+  background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+  color: #f8f8f8;
+}
+
+/* Header (Top) */
+header {
+  width: 100%;
+  background: #111;
+  border-bottom: 2px solid #c084fc;
+  padding: 1.5rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px #9b5de5;
+  position: relative;
+  z-index: 1000;
+}
+
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-title img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #111;
+  box-shadow: 0 0 20px 6px #9b5de5;
+}
+
+.logo-title span {
+  font-size: 2rem;
+  color: white;
+  text-shadow: 0 0 10px #c084fc;
+}
+
+/* Page Layout (Sidebar + Main) */
+.page-container {
+  display: flex;
+  min-height: calc(100vh - 100px); /* Leaves space for the header */
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #111;
+  border-right: 2px solid #c084fc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 0;
+  transition: width 0.3s ease;
+  overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 1.8rem;
+  cursor: pointer;
+  margin-bottom: 2rem;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+}
+
+.menu a {
+  color: #bbb;
+  text-decoration: none;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 1rem;
+  padding: 0.75rem 0;
+  width: 100%;
+  text-align: center;
+  transition: background-color 0.3s, color 0.3s;
+  border-radius: 10px;
+}
+
+.menu a:hover {
+  background: #c084fc;
+  color: white;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+  padding: 2rem;
+  transition: margin-left 0.3s ease;
+}
+
+/* Main Area (login, dashboard sections) */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 2rem;
+}
+
+h2, h3 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Input and Button Styling */
+input, button {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-family: 'Audiowide', sans-serif;
+}
+
+input {
+  background: #202020;
+  border: 2px solid #c084fc;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+input:focus {
+  outline: none;
+  background: #292929;
+}
+
+button {
+  background-color: #ffffff;
+  color: #333;
+  font-weight: bold;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+  background-color: #c084fc;
+  color: white;
+  transform: scale(1.08);
+}
+
+/* Session grid */
+.session-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.session-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.session-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid #c084fc;
+  background-color: #222;
+}
+
+.session-item:hover {
+  transform: scale(1.05);
+}
+
+.session-item p {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: white;
+}
+
+/* Footer */
+footer {
+  width: 100%;
+  background-color: #1a1a1a;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #bbb;
+  border-top: 1px solid #333;
+  margin-top: 2rem;
+}
+
+.sidebar.collapsed .menu a {
+  font-size: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .menu a::after {
+  content: '';
+}
+
+
+    </style>
+  </head>
+  <body>
+    <body>
+      <!-- Full Header at the Top -->
+      <header>
+        <div class="logo-title">
+          <img src="ORA.png" alt="Ora Logo" />
+          <span>Ora</span>
+        </div>
+      </header>
+    
+      <!-- Sidebar + Main Content wrapped together -->
+      <div class="page-container">
+        
+        <!-- Sidebar on the Left -->
+        <div class="sidebar" id="sidebar">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <nav class="menu">
+            <a href="https://meet.google.com/" target="_blank"">New Meeting</a>
+            <!-- <a href="settings.html">Settings</a>
+            <a href="help.html">Help & Support</a> -->
+            <a href="#" onclick="logoutUser()">Logout</a>
+          </nav>
+        </div>
+    
+        <!-- Main Content on the Right -->
+        <div class="main-content">
+    
+          <!-- Main dashboard area -->
+          <main>
+            <div id="auth-section" class="section">
+              <h2>Login or Sign Up</h2>
+              <input type="email" id="email" placeholder="Email" />
+              <input type="password" id="password" placeholder="Password" />
+              <button onclick="signInEmail()">Login</button>
+              <button onclick="signUpEmail()">Sign Up</button>
+              <button onclick="signInGoogle()">Continue with Google</button>
+            </div>
+    
+            <div id="dashboard" class="section" style="display: none">
+              <h2>Welcome, <span id="user-email"></span></h2>
+    
+              <div class="section">
+                <h3>Your Ora Sessions</h3>
+                <div id="transcripts" class="session-grid">
+                  <div class="session-item" onclick="openSession('Meeting with Ava')">
+                    <img src="ORA.png" alt="Session 1" />
+                    <p>Meeting with Ava</p>
+                  </div>
+                  <div class="session-item" onclick="openSession('Weekly Standup')">
+                    <img src="ORA.png" alt="Session 2" />
+                    <p>Weekly Standup</p>
+                  </div>
+                  <div class="session-item" onclick="openSession('Client Review')">
+                    <img src="ORA.png" alt="Session 3" />
+                    <p>Client Review</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+    
+          <!-- Footer at the bottom -->
+         
+    
+        </div> <!-- End of .main-content -->
+      </div> <!-- End of .page-container -->
+    
+      <footer>
+        <p>© 2025 Ora — Your Personal AI Tech Consultant</p>
+      </footer>
+      <!-- Scripts -->
+      <script type="module" src="dash.js"></script>
+      <script>
+        function toggleSidebar() {
+          const sidebar = document.getElementById("sidebar");
+          sidebar.classList.toggle("collapsed");
+        }
+    
+        function openSession(sessionName) {
+          localStorage.setItem("selectedSession", sessionName);
+          window.location.href = "session.html";
+        }
+      </script>  
+  </body>
+</html>

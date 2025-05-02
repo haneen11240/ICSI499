@@ -10,15 +10,28 @@ from groq import Groq
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+import sys
+
+if len(sys.argv) > 2:
+    meet_url = sys.argv[1]
+    user_id = sys.argv[2]
+else:
+    meet_url = None
+    user_id = None
+
+print(f"✅ Speak.py started for Meet: {meet_url}, User ID: {user_id}")
+
+# === CONFIG ===
+base_path = os.path.dirname(__file__)  # ✅ Correct!
+firebase_key_path = os.path.join(base_path, "firebase-key.json")
+
+cred = credentials.Certificate(firebase_key_path)  # ✅ Only once
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 USER_ID = os.environ.get("USER_ID", "test_user")
 PLATFORM = os.environ.get("PLATFORM", "Google Meet")
-
-
-# === SETUP FIREBASE ===
-cred = credentials.Certificate("firebase-key.json")  # Update path if needed
-firebase_admin.initialize_app(cred)
-db = firestore.client()
 
 # === SETTINGS ===
 GROQ_API_KEY = "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"

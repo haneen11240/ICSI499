@@ -1,7 +1,7 @@
 // dashboard.js
 import { loginWithGoogle, loginWithEmail, signUpWithEmail, logout, onUserStateChange } from './auth.js';
 import { db } from './firebase_config.js';
-import { collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { collection, query, where, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const authSection = document.getElementById('auth-section');
 const dashboard = document.getElementById('dashboard');
@@ -43,17 +43,15 @@ onUserStateChange(user => {
 });
 
 function loadTranscripts(userId) {
-  const q = query(collection(db, "transcripts"), where("userId", "==", userId));
+  const q = query(collection(db, `users/${userId}/logs`));
   onSnapshot(q, snapshot => {
     transcripts.innerHTML = '';
     snapshot.forEach(doc => {
       const data = doc.data();
       const div = document.createElement('div');
-      div.className = 'transcript';
-      div.innerHTML = `<strong>Date:</strong> ${data.date} <br>
-                       <strong>Time:</strong> ${data.time} <br>
-                       <strong>Platform:</strong> ${data.platform} <br>
-                       <strong>Transcript:</strong> ${data.transcript}`;
+      div.className = 'session-item';
+      div.onclick = () => openSession(doc.id);
+      div.innerHTML = `<img src="ORA.png" alt="Session Image"/><p>${data.logName || doc.id}</p>`;
       transcripts.appendChild(div);
     });
   });

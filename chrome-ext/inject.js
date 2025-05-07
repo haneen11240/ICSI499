@@ -59,7 +59,7 @@
         const blob = new Blob(chunks, { type: "audio/webm" });
         const formData = new FormData();
         formData.append("audio", blob, "chunk.webm");
-        formData.append("uid", uid); // ✅ send UID
+        formData.append("uid", uid); // send UID
 
         try {
           const response = await fetch("http://localhost:5000/speech-to-text", {

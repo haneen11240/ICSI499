@@ -4,7 +4,6 @@ const multer = require('multer');
 const { spawn } = require('child_process');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
-const { getStorage } = require('firebase-admin/storage');
 const path = require('path');
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
@@ -19,11 +18,9 @@ const upload = multer({ dest: 'uploads/' });
 
 const serviceAccount = require(path.join(__dirname, '../firebase-key.json'));
 initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: 'ora-tech-79eae.appspot.com'
+  credential: cert(serviceAccount)
 });
 const db = getFirestore();
-const bucket = getStorage().bucket();
 
 const GROQ_API_KEY = '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';
 
@@ -43,12 +40,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   const wavPath = audioPath + '.wav';
   const timestamp = Date.now();
   const logDir = path.join(__dirname, 'logs');
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir);
-  }
-
-  const logPath = `logs/session_${uid}_${timestamp}.txt`;
-  const localLogPath = path.join(__dirname, logPath);
+  if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
   let conversationLog = '';
 
   try {
@@ -88,7 +80,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
         }
 
         const transcript = fs.readFileSync(transcriptPath, 'utf8').trim();
-
         if (!transcript) throw new Error("Transcript was empty or not parsed.");
 
         console.log("📝 Final Transcript:", transcript);
@@ -120,20 +111,16 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
         console.log("🎤 Ora AI Reply:", reply);
         conversationLog += `Ora said: ${reply}\n`;
 
-        fs.writeFileSync(localLogPath, conversationLog);
+        const now = new Date();
+        const meetingDoc = {
+          date: now.toLocaleDateString(),
+          startTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          length: '5 seconds', // hardcoded; you can track start/end later
+          transcript: conversationLog,
+          createdAt: Timestamp.now()
+        };
 
-        await bucket.upload(localLogPath, {
-          destination: `users/${uid}/logs/${timestamp}.txt`,
-          metadata: {
-            contentType: 'text/plain'
-          }
-        });
-
-        await db.collection('users').doc(uid).collection('logs').add({
-          createdAt: Timestamp.now(),
-          logName: `session_${timestamp}.txt`,
-          storagePath: `users/${uid}/logs/${timestamp}.txt`
-        });
+        await db.collection('users').doc(uid).collection('meetings').add(meetingDoc);
 
         res.json({ triggered: true, response: reply });
       } catch (e) {

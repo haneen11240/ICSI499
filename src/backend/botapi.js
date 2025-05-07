@@ -11,7 +11,11 @@ const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-uid']
+}));
 app.use(express.json());
 
 const upload = multer({ dest: 'uploads/' });
@@ -115,7 +119,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
         const meetingDoc = {
           date: now.toLocaleDateString(),
           startTime: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          length: '5 seconds', // hardcoded; you can track start/end later
+          length: '5 seconds',
           transcript: conversationLog,
           createdAt: Timestamp.now()
         };

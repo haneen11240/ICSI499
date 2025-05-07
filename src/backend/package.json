@@ -1,7 +1,6 @@
 {
     "name": "ora-backend",
     "version": "1.0.0",
-    "type": "module",
     "main": "botapi.js",
     "scripts": {
       "start": "node botapi.js"

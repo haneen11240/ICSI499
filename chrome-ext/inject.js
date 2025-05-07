@@ -1,136 +1,97 @@
-(function() { 
-  console.log("inject.js loaded");
+(async function () {
+  if (!window.location.href.includes("meet.google.com")) return;
 
-  const existingButton = document.getElementById("add-button");
-  if (existingButton) return;
+  console.log("Injecting Ora with Mic Recorder...");
 
-  const addButton = document.createElement("button");
-  const removeButton = document.createElement("button");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    source.connect(analyser);
 
-  addButton.id = "add-button";
-  addButton.innerText = "Add Ora";
-  addButton.style.position = "fixed";
-  addButton.style.bottom = "20px";
-  addButton.style.right = "20px";
-  addButton.style.zIndex = "10000";
-  addButton.style.padding = "10px 15px";
-  addButton.style.backgroundColor = "#1a73e8";
-  addButton.style.color = "white";
-  addButton.style.border = "none";
-  addButton.style.borderRadius = "5px";
-  addButton.style.cursor = "pointer";
-  
-  removeButton.id = "remove-button";
-  removeButton.innerText = "Remove Ora";
-  removeButton.style.position = "fixed";
-  removeButton.style.bottom = "70px";
-  removeButton.style.right = "20px";
-  removeButton.style.zIndex = "10000";
-  removeButton.style.padding = "10px 15px";
-  removeButton.style.backgroundColor = "#d9534f";
-  removeButton.style.color = "white";
-  removeButton.style.border = "none";
-  removeButton.style.borderRadius = "5px";
-  removeButton.style.cursor = "pointer";
+    const meter = document.createElement("div");
+    meter.style.position = "fixed";
+    meter.style.bottom = "80px";
+    meter.style.right = "20px";
+    meter.style.width = "100px";
+    meter.style.height = "10px";
+    meter.style.border = "1px solid #ccc";
+    meter.style.background = "#222";
+    meter.style.zIndex = 999999;
+    document.body.appendChild(meter);
 
-  // Button click logic
-  addButton.onclick = () => {
-      console.log("Sending POST to localhost:8080/join");
+    const level = document.createElement("div");
+    level.style.height = "100%";
+    level.style.background = "#4caf50";
+    level.style.width = "0%";
+    meter.appendChild(level);
 
-      fetch("http://localhost:8080/join", {
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ url: window.location.href })
-      })
-      .then(res => {
-          if (res.ok) {
-              alert("Ora is joining your Meet!");
-          } else {
-              alert("Failed to connect to Ora.");
+    function updateMeter() {
+      analyser.getByteTimeDomainData(dataArray);
+      const rms = Math.sqrt(
+        dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length
+      );
+      const percent = Math.min((rms / 128) * 100, 100);
+      level.style.width = `${percent}%`;
+      requestAnimationFrame(updateMeter);
+    }
+    updateMeter();
+
+    const options = { mimeType: "audio/webm;codecs=opus" };
+    const uid = localStorage.getItem("ora_uid");
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      console.warn("Codec not supported.");
+      return;
+    }
+
+    function startRecordingLoop() {
+      const mediaRecorder = new MediaRecorder(stream, options);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", blob, "chunk.webm");
+        formData.append("uid", uid); // send UID
+
+        try {
+          const response = await fetch("http://localhost:5000/speech-to-text", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          console.log("📥 Server response:", result);
+
+          if (result.triggered && result.response) {
+            const utterance = new SpeechSynthesisUtterance(result.response);
+            utterance.lang = "en-US";
+            speechSynthesis.speak(utterance);
           }
-      })
-      .catch((err) => {
-          console.error("Failed to fetch: ", err);
-          alert("Error: Could not reach local server.");
-      });
-  };
-
-  removeButton.onclick = () => {
-    console.log("Removing Ora from the Meet");
-
-    // Send a request to backend to remove Ora
-    fetch("http://localhost:8080/remove", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ url: window.location.href })
-    })
-    .then(res => {
-        if (res.ok) {
-            alert("Ora has left the meeting!");
-        } else {
-            alert("Failed to remove Ora.");
+        } catch (e) {
+          console.error("❌ Error sending audio:", e);
         }
-    })
-    .catch((err) => {
-        console.error("Failed to fetch: ", err);
-        alert("Error: Could not reach the server.");
-    });
-};
 
-  // Make the button draggable
-  const makeDraggable = (element) => {
-      let isDragging = false;
-      let offsetX, offsetY;
+        setTimeout(startRecordingLoop, 2000);
+      };
 
-      const dragHandle = document.createElement("div");
-      dragHandle.style.width = "100%";
-      dragHandle.style.height = "10px";
-      dragHandle.style.backgroundColor = "transparent";
-      dragHandle.style.cursor = "move";
-      element.appendChild(dragHandle); // Add drag handle
+      mediaRecorder.start();
+      console.log("🎙️ Recording started...");
+      setTimeout(() => {
+        mediaRecorder.stop();
+        console.log("🛑 Recording stopped after 5s");
+      }, 5000);
+    }
 
-      dragHandle.addEventListener('mousedown', (e) => {
-          isDragging = true;
-          offsetX = e.clientX - parseInt(window.getComputedStyle(element).left);
-          offsetY = e.clientY - parseInt(window.getComputedStyle(element).top);
-          document.addEventListener('mousemove', dragMove);
-      });
-
-      document.addEventListener('mouseup', () => {
-          isDragging = false;
-          document.removeEventListener('mousemove', dragMove);
-      });
-
-      function dragMove(e) {
-          if (isDragging) {
-              element.style.left = `${e.clientX - offsetX}px`;
-              element.style.top = `${e.clientY - offsetY}px`;
-          }
-      }
-  };
-
-  // Apply drag logic to buttons
-  makeDraggable(addButton);
-  makeDraggable(removeButton);
-
-  // Prevent overlap with Meet controls
-  const preventOverlap = () => {
-      const meetControls = document.querySelector('[aria-label="Controls"]');
-      if (meetControls) {
-          const controlsRect = meetControls.getBoundingClientRect();
-          addButton.style.bottom = `${controlsRect.bottom + 20}px`;
-          removeButton.style.bottom = `${controlsRect.bottom + 70}px`;
-      }
-  };
-
-  preventOverlap();
-  window.addEventListener("resize", preventOverlap);
-
-  // Append buttons to the document body
-  document.body.appendChild(addButton);
-  document.body.appendChild(removeButton);
+    startRecordingLoop();
+  } catch (error) {
+    console.error("Mic capture failed:", error);
+  }
 })();

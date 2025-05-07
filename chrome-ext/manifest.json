@@ -1,25 +1,27 @@
 {
-    "manifest_version": 3,
-    "name": "TechBot for Google Meet",
-    "version": "1.0",
-    "description": "Add your AI Tech Consultant to a Google Meet.",
-    "permissions": ["scripting", "activeTab", "tabs"],
-    "host_permissions": ["*://meet.google.com/*"],
-    "browser_action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icon.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
-      }
-    },
-    "content_scripts": [
-      {
-        "matches": ["*://meet.google.com/*"],
-        "js": ["inject.js"]
-      }
-    ],
-    "action": {
-      "default_title": "Add TechBot"
+  "manifest_version": 3,
+  "name": "Ora AI Tech Consultant",
+  "version": "1.0",
+  "permissions": [
+    "tabs",
+    "identity",
+    "alarms",
+    "scripting",
+    "audioCapture"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "dist/background.bundle.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["inject.js", "relay.js"]
     }
-  }  
+  ]
+}

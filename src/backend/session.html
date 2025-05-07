@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ora Session Details</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Audiowide", sans-serif;
+        background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+      }
+      h1 {
+        margin-bottom: 1rem;
+        text-shadow: 0 0 10px #c084fc;
+      }
+      .info {
+        margin-bottom: 2rem;
+        color: #bbb;
+        font-size: 0.95rem;
+      }
+      .summary,
+      .suggestions {
+        background: #1a1a1a;
+        padding: 1.5rem;
+        border-radius: 20px;
+        margin: 1rem auto;
+        width: 90%;
+        max-width: 700px;
+        box-shadow: 0 0 15px #9b5de5;
+        text-align: left;
+      }
+      button {
+        margin-top: 1rem;
+        background-color: #c084fc;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 0.8rem 1.5rem;
+        cursor: pointer;
+        font-weight: bold;
+        font-family: "Audiowide", sans-serif;
+      }
+      button:hover {
+        background-color: #9b5de5;
+      }
+
+      .back-button {
+  background-color: transparent;
+  color: #c084fc;
+  border: 1px solid #c084fc;
+  margin-top: 2rem;
+}
+
+.back-button:hover {
+  background-color: #c084fc;
+  color: white;
+}
+    </style>
+  </head>
+  <body>
+    <h1 id="sessionName">Loading...</h1>
+
+    <div class="info" id="meetingInfo">
+      Date: <strong>April 27, 2025</strong> <br />
+      Time: <strong>2:00 PM</strong> <br />
+      Attendees: <strong>Ava, John, Ramani</strong>
+    </div>
+
+    <div class="summary" id="summaryText">
+      <h3>Meeting Summary</h3>
+      <p>
+        The team discussed integrating Ora into client workflows, focusing on
+        faster AI response time and easier customization tools.
+      </p>
+    </div>
+
+    <!-- <div class="suggestions" id="suggestionsText">
+      <h3>AI Suggestions</h3>
+      <ul>
+        <li>Implement a faster caching layer for AI responses.</li>
+        <li>Design a customizable tone selector for clients.</li>
+        <li>Prepare a tutorial for first-time users.</li>
+      </ul>
+    </div> -->
+
+    <button onclick="downloadSummary()">Download Full Transcript (TXT)</button>
+
+    <br /><br />
+    <button class="back-button" onclick="goBackToDashboard()">Back to Dashboard</button>
+
+    <script>
+      function goBackToDashboard() {
+        window.location.href = "dash.html"; // or whatever your dashboard page is called
+      }
+    </script>
+
+    <script>
+
+// Load the selected session
+const sessionName = localStorage.getItem('selectedSession');
+document.getElementById('sessionName').textContent = sessionName;
+
+// Session data for each meeting
+const sessionData = {
+  "Meeting with Ava": {
+    date: "April 26, 2025",
+    time: "2:00 PM",
+    attendees: ["Ava", "John", "Ramani"],
+    summary: "Discussed integrating Ora into client workflows, focusing on faster AI response time and easier customization tools.",
+    // suggestions: [
+    //   "Implement a faster caching layer for AI responses.",
+    //   "Design a customizable tone selector for clients.",
+    //   "Prepare a tutorial for first-time users."
+    // ]
+  },
+  "Weekly Standup": {
+    date: "April 25, 2025",
+    time: "10:00 AM",
+    attendees: ["Team Ora"],
+    summary: "Reviewed weekly progress, discussed project blockers, and prioritized next sprint tasks.",
+    // suggestions: [
+    //   "Complete backend optimizations by next week.",
+    //   "Schedule client feedback session for new features.",
+    //   "Update documentation for the new AI module."
+    // ]
+  },
+  "Client Review": {
+    date: "April 24, 2025",
+    time: "4:00 PM",
+    attendees: ["Client X", "Ora Team"],
+    summary: "Presented Ora's new features, gathered feedback on customization and performance improvements.",
+    // suggestions: [
+    //   "Adjust dashboard design based on client feedback.",
+    //   "Increase customization options for user profiles.",
+    //   "Optimize AI speed for heavy data loads."
+    // ]
+  }
+};
+
+// Find the matching session info
+const currentSession = sessionData[sessionName];
+
+// If found, populate the page
+if (currentSession) {
+  document.getElementById('meetingInfo').innerHTML = `
+    Date: <strong>${currentSession.date}</strong> <br/>
+    Time: <strong>${currentSession.time}</strong> <br/>
+    Attendees: <strong>${currentSession.attendees.join(', ')}</strong>
+  `;
+
+  document.getElementById('summaryText').innerHTML = `
+    <h3>Meeting Summary</h3>
+    <p>${currentSession.summary}</p>
+  `;
+
+//   document.getElementById('suggestionsText').innerHTML = `
+//     <h3>AI Suggestions</h3>
+//     <ul>
+//       ${currentSession.suggestions.map(item => `<li>${item}</li>`).join('')}
+//     </ul>
+//   `;
+}
+
+// Download button updated to pull correct data
+function downloadSummary() {
+  const text = `
+Session: ${sessionName}
+Date: ${currentSession.date}
+Time: ${currentSession.time}
+Attendees: ${currentSession.attendees.join(', ')}
+
+Meeting Summary:
+- ${currentSession.summary}
+
+AI Suggestions:
+${currentSession.suggestions.map(s => `- ${s}`).join('\n')}
+  `;
+  const blob = new Blob([text], { type: "text/plain" });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${sessionName}-Summary.txt`;
+  link.click();
+}
+    </script>
+  </body>
+</html>

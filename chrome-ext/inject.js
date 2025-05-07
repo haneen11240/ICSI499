@@ -62,7 +62,7 @@
         formData.append("uid", uid); // send UID
 
         try {
-          const response = await fetch("http://localhost:5000/speech-to-text", {
+          const response = await fetch("https://icsi499.onrender.com/speech-to-text", {
             method: "POST",
             body: formData,
           });

@@ -80,7 +80,7 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
     const idToken = await user.getIdToken();
 
     try {
-      const response = await fetch("http://localhost:5000/start-bot", {
+      const response = await fetch('https://icsi499.onrender.com/start-bot', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

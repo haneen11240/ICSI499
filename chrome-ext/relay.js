@@ -40,7 +40,7 @@ window.addEventListener("message", (event) => {
           if (transcript.toLowerCase().includes("ora what do you think")) {
             console.log("🛎️ Trigger phrase detected!");
 
-            fetch('http://localhost:5000/get-ai-response', {
+            fetch('https://icsi499.onrender.com/get-ai-response', {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"

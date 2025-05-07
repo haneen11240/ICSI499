@@ -11,7 +11,11 @@ const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-uid']
+}));
 app.use(express.json());
 
 const upload = multer({ dest: 'uploads/' });

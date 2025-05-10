@@ -1,1 +1,0 @@
-In the context of a sentence, what happens is that each word is a token.

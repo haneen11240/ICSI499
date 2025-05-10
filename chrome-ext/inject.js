@@ -1,7 +1,14 @@
 (async function () {
   if (!window.location.href.includes("meet.google.com")) return;
+  
+  // check UID and ensure user is signed in and authorized
+  const uid = localStorage.getItem("ora_uid");
+  if (!uid) {
+    console.log("UID not found");
+    return;
+  }
 
-  console.log("Injecting Ora with Mic Recorder...");
+  console.log("Auth complete, injecting Ora");
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -41,7 +48,6 @@
     updateMeter();
 
     const options = { mimeType: "audio/webm;codecs=opus" };
-    const uid = localStorage.getItem("ora_uid");
     if (!MediaRecorder.isTypeSupported(options.mimeType)) {
       console.warn("Codec not supported.");
       return;
@@ -68,7 +74,7 @@
           });
 
           const result = await response.json();
-          console.log("📥 Server response:", result);
+          console.log("Server:", result);
 
           if (result.triggered && result.response) {
             const utterance = new SpeechSynthesisUtterance(result.response);
@@ -76,21 +82,23 @@
             speechSynthesis.speak(utterance);
           }
         } catch (e) {
-          console.error("❌ Error sending audio:", e);
+          console.error("Error in audio:", e);
         }
 
+        // 2 second timeout
         setTimeout(startRecordingLoop, 2000);
       };
 
       mediaRecorder.start();
-      console.log("🎙️ Recording started...");
+      console.log("Listening");
       setTimeout(() => {
         mediaRecorder.stop();
-        console.log("🛑 Recording stopped after 5s");
+        console.log("Stopped");
       }, 5000);
     }
 
     startRecordingLoop();
+    
   } catch (error) {
     console.error("Mic capture failed:", error);
   }

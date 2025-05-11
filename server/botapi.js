@@ -3,7 +3,6 @@ import cors from 'cors';
 import multer from 'multer';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
 import path from 'path';
 import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
@@ -11,6 +10,7 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { fileURLToPath } from 'url';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,15 +21,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: os.tmpdir() }); // safe temporary file storage
 
 const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-key.json'), 'utf8'));
 initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: 'ora-tech-79eae.appspot.com'
+  credential: cert(serviceAccount)
 });
 const db = getFirestore();
-const bucket = getStorage().bucket();
 
 const GROQ_API_KEY = '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';
 
@@ -48,14 +46,10 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
   const wavPath = audioPath + '.wav';
   const timestamp = Date.now();
-  const logPath = `logs/session_${uid}_${timestamp}.txt`;
-  const localLogPath = path.join(__dirname, logPath);
-  let conversationLog = '';
 
   try {
     const stats = fs.statSync(audioPath);
     console.log("Uploaded file size:", stats.size);
-
     if (stats.size < 1000) {
       console.warn("Audio file too small — skipping transcription.");
       return res.status(400).json({ error: "Audio too small" });
@@ -71,9 +65,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
         .on('error', reject)
         .save(wavPath);
     });
-
-    const wavStats = fs.statSync(wavPath);
-    console.log("WAV file size:", wavStats.size);
 
     console.log("[STEP 3] Transcribing with OpenAI Whisper API...");
     const audioBuffer = fs.readFileSync(wavPath);
@@ -97,7 +88,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     if (!transcript) throw new Error("Transcript was empty or failed");
 
     console.log("Final Transcript:", transcript);
-    conversationLog += `User said: ${transcript}\n`;
 
     const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -123,22 +113,17 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     const aiData = await aiRes.json();
     const reply = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't understand.";
     console.log("Ora AI Reply:", reply);
-    conversationLog += `Ora said: ${reply}\n`;
 
-    fs.writeFileSync(localLogPath, conversationLog);
-
-    await bucket.upload(localLogPath, {
-      destination: `users/${uid}/logs/${timestamp}.txt`,
-      metadata: {
-        contentType: 'text/plain'
-      }
-    });
-
+    // ✅ Save transcript + reply directly to Firestore
     await db.collection('users').doc(uid).collection('logs').add({
       createdAt: Timestamp.now(),
-      logName: `session_${timestamp}.txt`,
-      storagePath: `users/${uid}/logs/${timestamp}.txt`
+      userSaid: transcript,
+      oraSaid: reply
     });
+
+    // ✅ Clean up temporary files
+    fs.unlinkSync(audioPath);
+    fs.unlinkSync(wavPath);
 
     res.json({ triggered: true, response: reply });
 

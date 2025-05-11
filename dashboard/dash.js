@@ -56,3 +56,54 @@ function loadTranscripts(userId) {
     });
   });
 }
+
+function showOraSetupModal() {
+  const modal = document.getElementById("oraSetupModal");
+  modal.style.display = "block";
+}
+
+function hideOraSetupModal() {
+  const modal = document.getElementById("oraSetupModal");
+  modal.style.display = "none";
+  localStorage.setItem("ora_setup_complete", "true");
+}
+
+function getDriverLink() {
+  const platform = navigator.platform.toLowerCase();
+  if (platform.includes("win")) return "https://vb-audio.com/Cable/VBCABLE_Driver_Pack43.zip";
+  if (platform.includes("mac")) return "https://existential.audio/blackhole/";
+  return "https://wiki.archlinux.org/title/PipeWire#Loopback_module";
+}
+
+function downloadDriver() {
+  window.open(getDriverLink(), "_blank");
+}
+
+async function runOraTest() {
+  await navigator.mediaDevices.getUserMedia({ audio: true });
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const hasCable = devices.some(d =>
+    d.label.toLowerCase().includes("cable") || d.label.toLowerCase().includes("blackhole")
+  );
+
+  const msg = new SpeechSynthesisUtterance("Hello! This is Ora. Can you hear me?");
+  speechSynthesis.speak(msg);
+
+  setTimeout(() => {
+    if (hasCable) {
+      alert("✅ Virtual mic detected. Ask someone in the Meet if they heard Ora.");
+    } else {
+      alert("⚠️ No virtual mic detected. Please install the audio driver before using Ora.");
+    }
+  }, 4000);
+}
+
+// Button listeners
+document.getElementById("oraInstallBtn").addEventListener("click", downloadDriver);
+document.getElementById("oraTestBtn").addEventListener("click", runOraTest);
+document.getElementById("oraDoneBtn").addEventListener("click", hideOraSetupModal);
+
+// Show on first login
+if (localStorage.getItem("ora_setup_complete") !== "true") {
+  setTimeout(showOraSetupModal, 1000);
+}

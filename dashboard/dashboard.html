@@ -241,6 +241,43 @@ footer {
   content: '';
 }
 
+.ora-modal {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  border: 2px solid #c084fc;
+  padding: 2rem;
+  border-radius: 20px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 0 30px #9b5de5;
+  z-index: 9999;
+  width: 90%;
+  max-width: 400px;
+}
+
+.ora-modal button {
+  margin-top: 1rem;
+  width: 90%;
+  padding: 0.75rem;
+  border-radius: 30px;
+  border: none;
+  font-family: 'Audiowide', sans-serif;
+  font-size: 1rem;
+  background-color: #ffffff;
+  color: #333;
+  font-weight: bold;
+  transition: 0.3s ease all;
+}
+
+.ora-modal button:hover {
+  background-color: #c084fc;
+  color: white;
+  transform: scale(1.05);
+}
+
 
     </style>
   </head>
@@ -304,7 +341,16 @@ footer {
               </div>
             </div>
           </main>
-    
+          <!-- Ora Voice Setup Modal -->
+          <div id="oraSetupModal" style="display: none;" class="ora-modal">
+            <h2>🔊 Enable Ora’s Voice in Google Meet</h2>
+            <p>To allow Ora to speak in your meetings, install a virtual audio device.</p>
+
+            <button id="oraInstallBtn">Install Audio Driver</button>
+            <button id="oraTestBtn">Run Ora Voice Test</button>
+            <button id="oraDoneBtn">I'm All Set</button>
+          </div>
+
           <!-- Footer at the bottom -->
          
     

@@ -1,31 +1,20 @@
+let recognition = null;
+
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
-  if (event.data.type === "ORA_TRIGGER_LAUNCH") {
-    try {
-      chrome.runtime.sendMessage({
-        type: "triggerOra",
-        meetUrl: window.location.href,
-        platform: "Google Meet"
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error("Failed to send message:", chrome.runtime.lastError.message);
-        } else {
-          console.log("Message sent successfully:", response);
-        }
-      });
-    } catch (err) {
-      console.error("Error sending message to background:", err);
+
+  if (event.data.type === "ORA_START_RELAY") {
+    if (recognition) {
+      console.log("Relay already active.");
+      return;
     }
-  }
-});
 
-(function () {
-  if (!window.location.href.includes("meet.google.com")) return;
+    if (!("webkitSpeechRecognition" in window)) {
+      console.warn("Speech recognition not supported.");
+      return;
+    }
 
-  console.log("✅ Ora Listener injected into Meet.");
-
-  if ('webkitSpeechRecognition' in window) {
-    const recognition = new webkitSpeechRecognition();
+    recognition = new webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = "en-US";
@@ -35,31 +24,6 @@ window.addEventListener("message", (event) => {
         if (event.results[i].isFinal) {
           const transcript = event.results[i][0].transcript.trim();
           console.log("🎤 You said:", transcript);
-
-          // Detect trigger phrase
-          if (transcript.toLowerCase().includes("ora what do you think")) {
-            console.log("🛎️ Trigger phrase detected!");
-
-            fetch('https://icsi499.onrender.com/get-ai-response', {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ prompt: transcript })
-            })
-            .then(response => response.json())
-            .then(data => {
-              console.log("🤖 Ora says:", data.response);
-
-              const utterance = new SpeechSynthesisUtterance(data.response);
-              utterance.lang = 'en-US';
-              utterance.rate = 1;
-              speechSynthesis.speak(utterance);
-            })
-            .catch(err => {
-              console.error("❌ Error fetching AI response:", err);
-            });
-          }
         }
       }
     };
@@ -69,8 +33,14 @@ window.addEventListener("message", (event) => {
     };
 
     recognition.start();
-    console.log("🎧 Ora is now listening...");
-  } else {
-    console.log("❌ Speech Recognition not supported in this browser.");
+    console.log("🎧 Relay speech recognition started.");
   }
-})();
+
+  if (event.data.type === "ORA_STOP_RELAY") {
+    if (recognition) {
+      recognition.stop();
+      recognition = null;
+      console.log("Relay speech recognition stopped.");
+    }
+  }
+});

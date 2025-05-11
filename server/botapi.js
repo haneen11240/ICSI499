@@ -53,6 +53,14 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   let conversationLog = '';
 
   try {
+    const stats = fs.statSync(audioPath);
+    console.log("Uploaded file size:", stats.size);
+
+    if (stats.size < 1000) {
+      console.warn("Audio file too small — skipping transcription.");
+      return res.status(400).json({ error: "Audio too small" });
+    }
+
     console.log("[STEP 2] Running ffmpeg to convert to WAV...");
     await new Promise((resolve, reject) => {
       ffmpeg()
@@ -64,9 +72,12 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
         .save(wavPath);
     });
 
-    console.log("[STEP 3] Transcribing with OpenAI Whisper API...");
+    const wavStats = fs.statSync(wavPath);
+    console.log("WAV file size:", wavStats.size);
 
+    console.log("[STEP 3] Transcribing with OpenAI Whisper API...");
     const audioBuffer = fs.readFileSync(wavPath);
+
     const form = new FormData();
     form.append('file', audioBuffer, { filename: 'audio.wav' });
     form.append('model', 'whisper-1');
@@ -80,10 +91,12 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     });
 
     const whisperData = await whisperRes.json();
-    const transcript = whisperData.text?.trim();
+    console.log("Whisper raw response:", whisperData);
+
+    const transcript = whisperData?.text?.trim();
     if (!transcript) throw new Error("Transcript was empty or failed");
 
-    console.log("📝 Final Transcript:", transcript);
+    console.log("Final Transcript:", transcript);
     conversationLog += `User said: ${transcript}\n`;
 
     const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -109,7 +122,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
     const aiData = await aiRes.json();
     const reply = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't understand.";
-    console.log("🎤 Ora AI Reply:", reply);
+    console.log("Ora AI Reply:", reply);
     conversationLog += `Ora said: ${reply}\n`;
 
     fs.writeFileSync(localLogPath, conversationLog);

@@ -23,7 +23,7 @@ app.use(express.json());
 
 const upload = multer({ dest: 'uploads/' });
 
-const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, '../firebase-key.json'), 'utf8'));
+const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-key.json'), 'utf8'));
 initializeApp({
   credential: cert(serviceAccount),
   storageBucket: 'ora-tech-79eae.appspot.com'

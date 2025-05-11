@@ -62,6 +62,18 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   alert("✅ Logged out successfully.");
 });
 
+document.getElementById("closeBtn").addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id },
+      func: () => {
+        window.postMessage({ type: "ORA_STOP" }, "*");
+        console.log("Sent ORA_STOP");
+      },
+    });
+  });
+});
+
 document.getElementById("launchBtn").addEventListener("click", async () => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const meetUrl = tabs[0].url;
@@ -97,7 +109,7 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
         throw new Error(`Server error: ${errorText}`);
       }
 
-      console.log("✅ Launch Ora backend responded successfully.");
+      console.log("Launch Ora backend responded successfully.");
 
       // ✅ Inject UID into the Meet tab first
       chrome.scripting.executeScript(
@@ -105,15 +117,17 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
           target: { tabId: tabs[0].id },
           func: (uid) => {
             localStorage.setItem("ora_uid", uid);
-            console.log("✅ Injected UID into localStorage:", uid);
+            console.log("Injected UID into localStorage:", uid);
           },
           args: [user.uid],
         },
         () => {
-          // ✅ Now inject inject.js
+          // inject inject.js
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            files: ["inject.js"],
+            func: () => {
+              window.postMessage({ type: "ORA_START" }, "*");
+            }
           });
         }
       );

@@ -1,25 +1,39 @@
 (async function () {
   if (!window.location.href.includes("meet.google.com")) return;
-  
-  // check UID and ensure user is signed in and authorized
+
   const uid = localStorage.getItem("ora_uid");
   if (!uid) {
-    console.log("UID not found");
+    console.warn("UID not found — aborting Ora inject.");
     return;
   }
 
-  console.log("Auth complete, injecting Ora");
+  console.log("Ora script injected. Waiting for launch trigger...");
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaStreamSource(stream);
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    source.connect(analyser);
+  const options = { mimeType: "audio/webm;codecs=opus" };
+  let stream = null;
+  let isListening = false;
+  let audioCtx, analyser, dataArray;
+
+  async function setupStream() {
+    if (!stream) {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      source.connect(analyser);
+
+      createAudioMeter();
+    }
+  }
+
+  function createAudioMeter() {
+    const existing = document.getElementById("ora-meter");
+    if (existing) return;
 
     const meter = document.createElement("div");
+    meter.id = "ora-meter";
     meter.style.position = "fixed";
     meter.style.bottom = "80px";
     meter.style.right = "20px";
@@ -31,12 +45,14 @@
     document.body.appendChild(meter);
 
     const level = document.createElement("div");
+    level.id = "ora-meter-level";
     level.style.height = "100%";
     level.style.background = "#4caf50";
     level.style.width = "0%";
     meter.appendChild(level);
 
     function updateMeter() {
+      if (!analyser || !dataArray) return;
       analyser.getByteTimeDomainData(dataArray);
       const rms = Math.sqrt(
         dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length
@@ -45,61 +61,72 @@
       level.style.width = `${percent}%`;
       requestAnimationFrame(updateMeter);
     }
+
     updateMeter();
-
-    const options = { mimeType: "audio/webm;codecs=opus" };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      console.warn("Codec not supported.");
-      return;
-    }
-
-    function startRecordingLoop() {
-      const mediaRecorder = new MediaRecorder(stream, options);
-      const chunks = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        const formData = new FormData();
-        formData.append("audio", blob, "chunk.webm");
-        formData.append("uid", uid); // send UID
-
-        try {
-          const response = await fetch("https://icsi499.onrender.com/speech-to-text", {
-            method: "POST",
-            body: formData,
-          });
-
-          const result = await response.json();
-          console.log("Server:", result);
-
-          if (result.triggered && result.response) {
-            const utterance = new SpeechSynthesisUtterance(result.response);
-            utterance.lang = "en-US";
-            speechSynthesis.speak(utterance);
-          }
-        } catch (e) {
-          console.error("Error in audio:", e);
-        }
-
-        // 2 second timeout
-        setTimeout(startRecordingLoop, 2000);
-      };
-
-      mediaRecorder.start();
-      console.log("Listening");
-      setTimeout(() => {
-        mediaRecorder.stop();
-        console.log("Stopped");
-      }, 5000);
-    }
-
-    startRecordingLoop();
-    
-  } catch (error) {
-    console.error("Mic capture failed:", error);
   }
+
+  async function startRecordingLoop() {
+    if (!isListening) return;
+
+    const mediaRecorder = new MediaRecorder(stream, options);
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      if (!isListening) return;
+
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("audio", blob, "chunk.webm");
+      formData.append("uid", uid);
+
+      try {
+        const response = await fetch("https://icsi499.onrender.com/speech-to-text", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+        console.log("Server response:", result);
+
+        if (result.triggered && result.response) {
+          const utterance = new SpeechSynthesisUtterance(result.response);
+          utterance.lang = "en-US";
+          speechSynthesis.speak(utterance);
+        }
+      } catch (e) {
+        console.error("Error sending audio:", e);
+      }
+
+      setTimeout(startRecordingLoop, 2000);
+    };
+
+    mediaRecorder.start();
+    console.log("Recording started");
+    setTimeout(() => {
+      mediaRecorder.stop();
+      console.log("Recording stopped");
+    }, 5000);
+  }
+
+  window.addEventListener("message", async (event) => {
+    if (event.source !== window) return;
+
+    if (event.data.type === "ORA_START") {
+      await setupStream();
+      if (!isListening) {
+        isListening = true;
+        console.log("Ora listening started");
+        startRecordingLoop();
+      }
+    }
+
+    if (event.data.type === "ORA_STOP") {
+      isListening = false;
+      console.log("Ora listening stopped");
+    }
+  });
 })();

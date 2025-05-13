@@ -14,7 +14,7 @@ import os from 'os';
 import textToSpeech from '@google-cloud/text-to-speech';
 
 const ttsClient = new textToSpeech.TextToSpeechClient({
-  keyFilename: path.join(__dirname, 'google-tts-key.json')
+  keyFilename: './google-tts-key.json'
 });
 
 app.post('/tts', async (req, res) => {

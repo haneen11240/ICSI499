@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ora-ai-459715",
+  "private_key_id": "93460c852897168606de2604ffc113a7135f2627",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDfyiVjD+M6StT2\nZ7PmJOpgW9/WZ/GDzqy9FA87A3m74jtZ0iPLgo8UEn94LhNKT+jZeXPGwGEXDzYU\nH+EKogXj41xE6u4JaC4c1dNPJgR5BqroYbWZBTNc4KDjUUeZqPIcf16UYsS/nYKa\nWM8lvvwd5K63S9bqoiYskCoY6xRKEuVLnhnR6M+ZgKi3YK7sUbSa83YDaeQtF+Q7\nUx0zRUbozg9GNtReFrLmyxzZKImfF9xCjJSOiHEYXKSsmH+ycu+fCLffL9Q2Kv/A\npt4T6HHOXjvisQozYFWBDcMFWbU4aLIfTIH/1OF/tWj3aOVA/Sx734cB0LMi0END\nLdjMkJjHAgMBAAECggEAAgBCuVIJDBpjMRjYSPSHi/kGVVp0lGMitEYbpMFxMzbg\npPr2CvnN4bYQobh3v7BbOqaVXG+X7qbaKu/mCTxNpS4BQzR+kGL4FpXq38hNPe/L\nU2ycPRQI04nGpoGxjDQwhgS1icogTD5STqMApyvAAVxsG4N4Fn0ArmFTnwlrEwZ3\n8piYQpKBXXIgdzo+rhHEH1pGkLL01R3AQKCYKFsUfHLER/3vgSGaRekKbnUqxCFK\nfMNsuKQ1/cKQ9E36/7KGt9DfjuIc+K4Lyg64EvkVo32EhXXWiJ6QiJiETtPdWY48\nb8lmm+SAgCYsOSc2h9ZkQMzMsnW6sA9ve3/J48N9MQKBgQDwp/ivQMH9YV9Nx/AG\nnQQBqRNREl1ZviNgzjPwaHwnxLXglLZ2MU4eRct+r/v1vPGSjL+qhdmFTvxhZFg0\nQX5NDYxebmCP1tGZwHsaLoiegrD14XKuYnEpUGFlXy8ZQHAz0VYeV9Uhn/NrWMMg\nFz14W/y0YP/yh0GvcZ49uD0IkwKBgQDuDuB0irOEesFI3odqI2wyBOxpiii0Vxwb\nSc2TedzZcw5AtcZ8SgGh8o3ih7YXP5zYGlESMjbx6lV3UzN+QftxfZGXlMaX5zR/\nSxa9CnAoq0fqtfJY/sL7oOygVpUgJ1UccBvJUQPyQ/ECSGVAxb3qpfqiBfsQNUch\n06B5My2TfQKBgC5MIkuU6b0VPoB4NnUPP/YR0OWH4u2g5q14/gUCFOCRt2u9MF0M\nnzqzsrJsqMxdzRukeDsWBQLgby1NYKqs7t9j+90u3uTNLwWlQgmHakEUY3bqKGXk\nCmEoVZRq+2SgQPW3EBpGS3psiyfbq65AylKdX8BT6Ol/m+NkuEynZRaBAoGBAJhy\n/HiFjlrLhdXVc+CbmKEbmA4qRNDgbAZpp/XGd5DlZn44KkjT1+HPA9/Kyuhue1HE\n4KAHejpHt723kWVMeep+4GqzAs6qaGsQOhqLgbH5pg9/vxgQ5ergbkhrygoSRiX1\nAUZV1HIj4kZ0+CqXt3x6GFwD+nixtcDK1pxnEsu9AoGBAKfsu8Z8rwOAmRqTZE4o\nt0yoXFUOHcQO9Bv+zT9MCDnCBuFN/lsmkpfHkQ6AOIOltRBrVBbpA9WAW/QL189O\n11mtkjaWt8nt5eZFkqpi6o7FK1hRzgGmiaao1VyfsEUDiavHIwTqhjP4ak1I84m9\n6vDryUOWJyBWXq7fIkX4TAa/\n-----END PRIVATE KEY-----\n",
+  "client_email": "ora-605@ora-ai-459715.iam.gserviceaccount.com",
+  "client_id": "115127899878681145095",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ora-605%40ora-ai-459715.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

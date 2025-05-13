@@ -91,7 +91,7 @@
         if (result.triggered && result.response) {
           const utterance = new SpeechSynthesisUtterance(result.response);
           utterance.lang = "en-US";
-          speechSynthesis.speak(utterance);
+          playTTS(result.response);
         }
       } catch (e) {
         console.error("Error sending audio:", e);
@@ -141,3 +141,18 @@
     }
   });
 })();
+
+function playTTS(text) {
+  fetch("https://icsi499.onrender.com/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play();
+  })
+  .catch(err => console.error("TTS error:", err));
+}

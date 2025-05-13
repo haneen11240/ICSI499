@@ -11,6 +11,33 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { fileURLToPath } from 'url';
 import os from 'os';
+import textToSpeech from '@google-cloud/text-to-speech';
+
+const ttsClient = new textToSpeech.TextToSpeechClient({
+  keyFilename: path.join(__dirname, 'google-tts-key.json')
+});
+
+app.post('/tts', async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: "Missing text" });
+
+  try {
+    const [response] = await ttsClient.synthesizeSpeech({
+      input: { text },
+      voice: {
+        languageCode: 'en-US',
+        name: 'en-US-Wavenet-F', // voice
+      },
+      audioConfig: { audioEncoding: 'MP3' },
+    });
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.send(response.audioContent);
+  } catch (err) {
+    console.error("TTS failed:", err);
+    res.status(500).json({ error: "TTS failed" });
+  }
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

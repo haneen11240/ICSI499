@@ -48,7 +48,7 @@ app.post('/tts', async (req, res) => {
       input: { text },
       voice: {
         languageCode: 'en-US',
-        name: 'en-US-Wavenet-F', // voice
+        name: 'en-US-Wavenet-C', // voice
       },
       audioConfig: { audioEncoding: 'MP3' },
     });
@@ -68,6 +68,9 @@ app.post('/start-bot', (req, res) => {
 app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   const uid = req.body.uid;
   if (!uid) return res.status(400).json({ error: "Missing UID" });
+
+  const sessionId = req.body.sessionId;
+  if (!sessionId) return res.status(400).json({ error: "Missing sessionId" });
 
   console.log("[STEP 1] Received audio upload");
   const audioPath = req.file?.path;
@@ -115,6 +118,30 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     const transcript = whisperData?.text?.trim();
     if (!transcript) throw new Error("Transcript was empty or failed");
 
+    const lowerTranscript = transcript.toLowerCase();
+    const isTrigger = lowerTranscript.includes("ora,") || lowerTranscript.includes("ora what do you think");
+    
+    const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
+    await logsRef.add({
+      createdAt: Timestamp.now(),
+      userSaid: transcript,
+      oraSaid: null,
+      triggered: isTrigger
+    });
+
+    if (!isTrigger) {
+      console.log("No trigger phrase detected. Skipping response.");
+      return res.json({ triggered: false, response: null });
+    }
+
+    const snap = await logsRef.orderBy('createdAt', 'desc').limit(10).get();
+    const contextHistory = [];
+    snap.docs.reverse().forEach(doc => {
+      const data = doc.data();
+      if (data.userSaid) contextHistory.push({ role: "user", content: data.userSaid });
+      if (data.oraSaid) contextHistory.push({ role: "assistant", content: data.oraSaid });
+    });
+    
     console.log("Final Transcript:", transcript);
 
     const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -126,14 +153,9 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       body: JSON.stringify({
         model: "llama3-8b-8192",
         messages: [
-          {
-            role: "system",
-            content: "You are Ora, a helpful technical assistant in a Google Meet call. Reply briefly and clearly."
-          },
-          {
-            role: "user",
-            content: transcript
-          }
+          { role: "system", content: "You are Ora, a helpful AI tech consultant in a Google Meet. Respond clearly and concisely based on prior conversation." },
+          ...contextHistory,
+          { role: "user", content: transcript }
         ]
       })
     });
@@ -146,6 +168,12 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     const prev = sessionLogs.get(uid) || '';
     const newLog = `${prev}User said: ${transcript}\nOra said: ${reply}\n\n`;
     sessionLogs.set(uid, newLog);
+    await logsRef.add({
+      createdAt: Timestamp.now(),
+      userSaid: null,
+      oraSaid: reply,
+      triggered: true
+    });
 
     // Clean up
     fs.unlinkSync(audioPath);

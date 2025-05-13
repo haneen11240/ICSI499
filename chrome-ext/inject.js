@@ -2,6 +2,7 @@
   if (!window.location.href.includes("meet.google.com")) return;
 
   const uid = localStorage.getItem("ora_uid");
+  const sessionId = new URL(window.location.href).pathname.replace(/\//g, "-");
   if (!uid) {
     console.warn("UID not found — aborting Ora inject.");
     return;
@@ -78,7 +79,7 @@
       const formData = new FormData();
       formData.append("audio", blob, "chunk.webm");
       formData.append("uid", uid);
-
+      formData.append("sessionId", sessionId);
       try {
         const response = await fetch("https://icsi499.onrender.com/speech-to-text", {
           method: "POST",

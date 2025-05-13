@@ -37,10 +37,10 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    alert("Logged in successfully.");
+    alert("✅ Logged in successfully.");
   } catch (error) {
     console.error(error);
-    alert("Login failed: " + error.message);
+    alert("❌ Login failed: " + error.message);
   }
 });
 
@@ -50,29 +50,16 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
 
   try {
     await createUserWithEmailAndPassword(auth, email, password);
-    alert("Account created successfully.");
+    alert("✅ Account created successfully.");
   } catch (error) {
     console.error(error);
-    alert("Signup failed: " + error.message);
+    alert("❌ Signup failed: " + error.message);
   }
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
-  alert("Logged out successfully.");
-});
-
-document.getElementById("closeBtn").addEventListener("click", () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: () => {
-        window.postMessage({ type: "ORA_STOP" }, "*");
-        window.postMessage({ type: "ORA_STOP_RELAY" }, "*");
-        console.log("Sent ORA_STOP");
-      },
-    });
-  });
+  alert("✅ Logged out successfully.");
 });
 
 document.getElementById("launchBtn").addEventListener("click", async () => {
@@ -80,20 +67,20 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
     const meetUrl = tabs[0].url;
 
     if (!meetUrl.includes("https://meet.google.com")) {
-      alert("Please open a Google Meet tab first.");
+      alert("⚠️ Please open a Google Meet tab first.");
       return;
     }
 
     const user = auth.currentUser;
     if (!user) {
-      alert("Please sign in first.");
+      alert("⚠️ Please sign in first!");
       return;
     }
 
     const idToken = await user.getIdToken();
 
     try {
-      const response = await fetch('https://icsi499.onrender.com/start-bot', {
+      const response = await fetch("http://localhost:5000/start-bot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,33 +97,30 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
         throw new Error(`Server error: ${errorText}`);
       }
 
+      console.log("✅ Launch Ora backend responded successfully.");
+
+      // ✅ Inject UID into the Meet tab first
       chrome.scripting.executeScript(
         {
           target: { tabId: tabs[0].id },
           func: (uid) => {
             localStorage.setItem("ora_uid", uid);
-            console.log("Injected UID into localStorage:", uid);
+            console.log("✅ Injected UID into localStorage:", uid);
           },
           args: [user.uid],
         },
         () => {
+          // ✅ Now inject inject.js
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
             files: ["inject.js"],
-          }, () => {
-            chrome.scripting.executeScript({
-              target: { tabId: tabs[0].id },
-              func: () => {
-                window.postMessage({ type: "ORA_START" }, "*");
-                window.postMessage({ type: "ORA_START_RELAY" }, "*");
-              }
-            });
           });
         }
       );
 
+      alert("✅ Ora is now active on your Meet!");
     } catch (error) {
-      console.error("Failed to launch Ora:", error);
+      console.error("❌ Failed to launch Ora:", error);
       alert("Failed to launch Ora. Please try again.");
     }
   });

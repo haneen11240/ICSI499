@@ -1,7 +1,7 @@
-// dashboard.js
+// dash.js
 import { loginWithGoogle, loginWithEmail, signUpWithEmail, logout, onUserStateChange } from './auth.js';
 import { db } from './firebase_config.js';
-import { collection, query, where, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { collection, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const authSection = document.getElementById('auth-section');
 const dashboard = document.getElementById('dashboard');
@@ -43,20 +43,31 @@ onUserStateChange(user => {
 });
 
 function loadTranscripts(userId) {
-  const q = query(collection(db, `users/${userId}/logs`));
+  const q = query(collection(db, `users/${userId}/meetings`), orderBy("createdAt", "desc"));
+
   onSnapshot(q, snapshot => {
     transcripts.innerHTML = '';
+
     snapshot.forEach(doc => {
       const data = doc.data();
       const div = document.createElement('div');
       div.className = 'session-item';
       div.onclick = () => openSession(doc.id);
-      div.innerHTML = `<img src="ORA.png" alt="Session Image"/><p>${data.logName || doc.id}</p>`;
+      div.innerHTML = `
+        <img src="ORA.png" alt="Session Image"/>
+        <p>${data.date} – ${data.time}</p>
+      `;
       transcripts.appendChild(div);
     });
   });
 }
 
+function openSession(sessionId) {
+  localStorage.setItem("selectedSession", sessionId);
+  window.location.href = "session.html";
+}
+
+// Optional: Setup modal for Ora audio
 function showOraSetupModal() {
   const modal = document.getElementById("oraSetupModal");
   modal.style.display = "block";

@@ -128,9 +128,9 @@
 
                 if (audio.setSinkId && vbDevice) {
                   await audio.setSinkId(vbDevice.deviceId);
-                  console.log("🔊 Ora voice routed to VB-Cable:", vbDevice.label);
+                  console.log("Ora voice routed to VB-Cable:", vbDevice.label);
                 } else {
-                  console.warn("⚠️ VB-Cable device not found. Using default audio output.");
+                  console.warn("VB-Cable device not found. Using default audio output.");
                 }
 
                 audio.play();

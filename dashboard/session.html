@@ -3,10 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Ora Session Details</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: "Audiowide", sans-serif;
@@ -24,8 +21,7 @@
         color: #bbb;
         font-size: 0.95rem;
       }
-      .summary,
-      .suggestions {
+      .summary {
         background: #1a1a1a;
         padding: 1.5rem;
         border-radius: 20px;
@@ -49,144 +45,87 @@
       button:hover {
         background-color: #9b5de5;
       }
-
       .back-button {
-  background-color: transparent;
-  color: #c084fc;
-  border: 1px solid #c084fc;
-  margin-top: 2rem;
-}
-
-.back-button:hover {
-  background-color: #c084fc;
-  color: white;
-}
+        background-color: transparent;
+        color: #c084fc;
+        border: 1px solid #c084fc;
+        margin-top: 2rem;
+      }
+      .back-button:hover {
+        background-color: #c084fc;
+        color: white;
+      }
     </style>
   </head>
   <body>
     <h1 id="sessionName">Loading...</h1>
 
-    <div class="info" id="meetingInfo">
-      Date: <strong>April 27, 2025</strong> <br />
-      Time: <strong>2:00 PM</strong> <br />
-      Attendees: <strong>Ava, John, Ramani</strong>
-    </div>
+    <div class="info" id="meetingInfo"></div>
 
     <div class="summary" id="summaryText">
-      <h3>Meeting Summary</h3>
-      <p>
-        The team discussed integrating Ora into client workflows, focusing on
-        faster AI response time and easier customization tools.
-      </p>
+      <h3>Loading transcript...</h3>
     </div>
 
-    <!-- <div class="suggestions" id="suggestionsText">
-      <h3>AI Suggestions</h3>
-      <ul>
-        <li>Implement a faster caching layer for AI responses.</li>
-        <li>Design a customizable tone selector for clients.</li>
-        <li>Prepare a tutorial for first-time users.</li>
-      </ul>
-    </div> -->
-
     <button onclick="downloadSummary()">Download Full Transcript (TXT)</button>
-
-    <br /><br />
+    <br><br>
     <button class="back-button" onclick="goBackToDashboard()">Back to Dashboard</button>
 
-    <script>
-      function goBackToDashboard() {
-        window.location.href = "dash.html"; // or whatever your dashboard page is called
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyC_E91yz5ARm3vbq_55JfHjfYr0FJ3oB_o",
+        authDomain: "ora-tech-79eae.firebaseapp.com",
+        projectId: "ora-tech-79eae",
+        storageBucket: "ora-tech-79eae.firebasestorage.app",
+        messagingSenderId: "62701837639",
+        appId: "1:62701837639:web:42c9ec787844fa4de9c062",
+        measurementId: "G-DSE8BTDQQH"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const sessionId = localStorage.getItem("selectedSession");
+      const user = JSON.parse(localStorage.getItem("firebase:authUser:ora-tech-79eae:[DEFAULT]"));
+
+      if (!user || !sessionId) {
+        alert("Session not found.");
+        window.location.href = "dashboard.html";
       }
-    </script>
 
-    <script>
+      document.getElementById("sessionName").textContent = sessionId;
 
-// Load the selected session
-const sessionName = localStorage.getItem('selectedSession');
-document.getElementById('sessionName').textContent = sessionName;
+      const docRef = doc(db, `users/${user.uid}/meetings/${sessionId}`);
+      const docSnap = await getDoc(docRef);
 
-// Session data for each meeting
-const sessionData = {
-  "Meeting with Ava": {
-    date: "April 26, 2025",
-    time: "2:00 PM",
-    attendees: ["Ava", "John", "Ramani"],
-    summary: "Discussed integrating Ora into client workflows, focusing on faster AI response time and easier customization tools.",
-    // suggestions: [
-    //   "Implement a faster caching layer for AI responses.",
-    //   "Design a customizable tone selector for clients.",
-    //   "Prepare a tutorial for first-time users."
-    // ]
-  },
-  "Weekly Standup": {
-    date: "April 25, 2025",
-    time: "10:00 AM",
-    attendees: ["Team Ora"],
-    summary: "Reviewed weekly progress, discussed project blockers, and prioritized next sprint tasks.",
-    // suggestions: [
-    //   "Complete backend optimizations by next week.",
-    //   "Schedule client feedback session for new features.",
-    //   "Update documentation for the new AI module."
-    // ]
-  },
-  "Client Review": {
-    date: "April 24, 2025",
-    time: "4:00 PM",
-    attendees: ["Client X", "Ora Team"],
-    summary: "Presented Ora's new features, gathered feedback on customization and performance improvements.",
-    // suggestions: [
-    //   "Adjust dashboard design based on client feedback.",
-    //   "Increase customization options for user profiles.",
-    //   "Optimize AI speed for heavy data loads."
-    // ]
-  }
-};
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById("meetingInfo").innerHTML = `
+          Date: <strong>${data.date}</strong><br>
+          Time: <strong>${data.time}</strong>
+        `;
+        document.getElementById("summaryText").innerHTML = `
+          <h3>Full Transcript</h3>
+          <pre style="white-space: pre-wrap;">${data.fullTranscript}</pre>
+        `;
+      } else {
+        document.getElementById("summaryText").innerHTML = `<p>Transcript not found.</p>`;
+      }
 
-// Find the matching session info
-const currentSession = sessionData[sessionName];
+      window.downloadSummary = function () {
+        const content = docSnap.exists() ? docSnap.data().fullTranscript : "No transcript available.";
+        const blob = new Blob([content], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${sessionId}-Transcript.txt`;
+        link.click();
+      };
 
-// If found, populate the page
-if (currentSession) {
-  document.getElementById('meetingInfo').innerHTML = `
-    Date: <strong>${currentSession.date}</strong> <br/>
-    Time: <strong>${currentSession.time}</strong> <br/>
-    Attendees: <strong>${currentSession.attendees.join(', ')}</strong>
-  `;
-
-  document.getElementById('summaryText').innerHTML = `
-    <h3>Meeting Summary</h3>
-    <p>${currentSession.summary}</p>
-  `;
-
-//   document.getElementById('suggestionsText').innerHTML = `
-//     <h3>AI Suggestions</h3>
-//     <ul>
-//       ${currentSession.suggestions.map(item => `<li>${item}</li>`).join('')}
-//     </ul>
-//   `;
-}
-
-// Download button updated to pull correct data
-function downloadSummary() {
-  const text = `
-Session: ${sessionName}
-Date: ${currentSession.date}
-Time: ${currentSession.time}
-Attendees: ${currentSession.attendees.join(', ')}
-
-Meeting Summary:
-- ${currentSession.summary}
-
-AI Suggestions:
-${currentSession.suggestions.map(s => `- ${s}`).join('\n')}
-  `;
-  const blob = new Blob([text], { type: "text/plain" });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${sessionName}-Summary.txt`;
-  link.click();
-}
+      window.goBackToDashboard = function () {
+        window.location.href = "dashboard.html";
+      };
     </script>
   </body>
 </html>

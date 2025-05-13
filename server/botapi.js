@@ -33,10 +33,7 @@ const ttsClient = new textToSpeech.TextToSpeechClient({
   keyFilename: './google-tts-key.json'
 });
 
-// In-memory session store
-const sessionLogs = new Map();
-
-// Whisper Helper
+// Whisper helpers
 async function convertToWav(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
     ffmpeg()
@@ -67,7 +64,7 @@ async function whisperToText(wavPath) {
   return data.text?.trim() || '';
 }
 
-// TTS Endpoint
+// TTS
 app.post('/tts', async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
@@ -87,13 +84,13 @@ app.post('/tts', async (req, res) => {
   }
 });
 
-// Basic start route
+// Start Bot (debug route)
 app.post('/start-bot', (req, res) => {
   console.log("/start-bot received.");
   res.json({ success: true, message: "Ora launched successfully!" });
 });
 
-// Lightweight route for checking trigger & storing transcript
+// Trigger detector only (no logging)
 app.post('/local-transcript', upload.single('audio'), async (req, res) => {
   const { uid, sessionId } = req.body;
   if (!uid || !sessionId) return res.status(400).json({ error: "Missing uid or sessionId" });
@@ -104,9 +101,7 @@ app.post('/local-transcript', upload.single('audio'), async (req, res) => {
   try {
     await convertToWav(audioPath, wavPath);
     const transcript = await whisperToText(wavPath);
-
-    const lower = transcript.toLowerCase();
-    const isTrigger = /\b(ora|aura)\b/.test(lower);
+    const isTrigger = /\b(ora|aura)\b/.test(transcript.toLowerCase());
 
     fs.unlinkSync(audioPath);
     fs.unlinkSync(wavPath);
@@ -118,7 +113,7 @@ app.post('/local-transcript', upload.single('audio'), async (req, res) => {
   }
 });
 
-// Full response  with memory
+// Combined user and AI response logging
 app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   const { uid, sessionId } = req.body;
   if (!uid || !sessionId) return res.status(400).json({ error: "Missing uid or sessionId" });
@@ -129,9 +124,10 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   try {
     await convertToWav(audioPath, wavPath);
     const transcript = await whisperToText(wavPath);
+
     const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
 
-    // Fetch context history
+    // Get prior context
     const snap = await logsRef.orderBy('createdAt', 'desc').limit(10).get();
     const contextHistory = [];
     snap.docs.reverse().forEach(doc => {
@@ -149,11 +145,9 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       body: JSON.stringify({
         model: "llama3-8b-8192",
         messages: [
-          { role: "system", 
-            content: `You are Ora, a helpful and friendly AI tech consultant participating in a Google Meet call. 
-            If someone says "Aura" instead of "Ora", do not correct them — assume they meant you and respond normally. 
-            Never mention your name was mispronounced. Just help as if you were addressed directly. 
-            Use context from the conversation to provide thoughtful, on-topic responses.`
+          {
+            role: "system",
+            content: `You are Ora, a helpful and friendly AI tech consultant in a Google Meet call. If someone says "Aura", assume they meant you. Use conversation history to respond meaningfully.`
           },
           ...contextHistory,
           { role: "user", content: transcript }
@@ -163,10 +157,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
     const aiData = await aiRes.json();
     const reply = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't understand.";
-
-    // Save reply
-    const prev = sessionLogs.get(uid) || '';
-    sessionLogs.set(uid, `${prev}User said: ${transcript}\nOra said: ${reply}\n\n`);
 
     await logsRef.add({
       createdAt: Timestamp.now(),
@@ -185,7 +175,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   }
 });
 
-// Save full transcript at end
+// Final session log (compiled full transcript)
 app.post('/end-session', async (req, res) => {
   const { uid, fullTranscript } = req.body;
   if (!uid || !fullTranscript) return res.status(400).json({ error: "Missing UID or full transcript" });

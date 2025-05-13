@@ -94,12 +94,15 @@
         });
 
         const transcriptData = await transcriptRes.json();
-        const transcript = transcriptData.transcript || "";
-        transcriptCache.push(transcript);
-        fullTranscript += `User said: ${transcript}\n`;
-        console.log("Transcript:", transcript);
+        const transcript = transcriptData.transcript?.trim();
 
-        if (transcriptData.triggered) {
+        if (transcript) {
+          transcriptCache.push(transcript);
+          fullTranscript += `User said: ${transcript}\n`;
+          console.log("Transcript:", transcript);
+        }
+
+        if (transcriptData.triggered && transcript) {
           isResponding = true;
 
           const aiRes = await fetch("https://icsi499.onrender.com/speech-to-text", {
@@ -109,10 +112,11 @@
 
           const aiData = await aiRes.json();
           const reply = aiData.response;
-          fullTranscript += `Ora said: ${reply}\n\n`;
-          console.log("Ora reply:", reply);
 
           if (reply) {
+            fullTranscript += `Ora said: ${reply}\n\n`;
+            console.log("Ora reply:", reply);
+
             const ttsRes = await fetch("https://icsi499.onrender.com/tts", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -132,9 +136,9 @@
 
                 if (audio.setSinkId && vbDevice) {
                   await audio.setSinkId(vbDevice.deviceId);
-                  console.log("Ora voice routed to VB-Cable:", vbDevice.label);
+                  console.log("🔊 Ora voice routed to VB-Cable:", vbDevice.label);
                 } else {
-                  console.warn("VB-Cable device not found. Using default audio output.");
+                  console.warn("⚠️ VB-Cable device not found. Using default audio output.");
                 }
 
                 audio.onended = () => {
@@ -152,6 +156,9 @@
                 };
               }
             }
+          } else {
+            isResponding = false;
+            startRecordingLoop();
           }
         } else {
           setTimeout(startRecordingLoop, 1000);

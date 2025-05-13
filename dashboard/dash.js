@@ -88,10 +88,6 @@ function hideOraSetupModal() {
   localStorage.setItem("ora_setup_complete", "true");
 }
 
-function downloadDriver() {
-  window.open(getDriverLink(), "_blank");
-}
-
 async function runOraTest() {
   await navigator.mediaDevices.getUserMedia({ audio: true });
   const devices = await navigator.mediaDevices.enumerateDevices();
@@ -118,7 +114,6 @@ async function runOraTest() {
 }
 
 // Button listeners
-document.getElementById("oraInstallBtn").addEventListener("click", runOraTest);
 document.getElementById("oraTestBtn").addEventListener("click", runOraTest);
 document.getElementById("oraDoneBtn").addEventListener("click", hideOraSetupModal);
 

@@ -119,8 +119,26 @@
               const audioBlob = await ttsRes.blob();
               const audioUrl = URL.createObjectURL(audioBlob);
               const audio = new Audio(audioUrl);
-              audio.play();
-            } else {
+
+              try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const vbDevice = devices.find(
+                  (d) => d.kind === "audiooutput" && d.label.toLowerCase().includes("vb-audio")
+                );
+
+                if (audio.setSinkId && vbDevice) {
+                  await audio.setSinkId(vbDevice.deviceId);
+                  console.log("🔊 Ora voice routed to VB-Cable:", vbDevice.label);
+                } else {
+                  console.warn("⚠️ VB-Cable device not found. Using default audio output.");
+                }
+
+                audio.play();
+              } catch (err) {
+                console.error("Failed to set VB-Cable as output device:", err);
+                audio.play(); // fallback
+              }
+                } else {
               console.error("TTS fetch failed");
             }
           }

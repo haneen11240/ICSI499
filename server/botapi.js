@@ -126,7 +126,7 @@ app.post('/local-transcript', upload.single('audio'), async (req, res) => {
   }
 });
 
-// Full response generation with memory
+// Full response  with memory
 app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   const { uid, sessionId } = req.body;
   if (!uid || !sessionId) return res.status(400).json({ error: "Missing uid or sessionId" });
@@ -157,7 +157,12 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       body: JSON.stringify({
         model: "llama3-8b-8192",
         messages: [
-          { role: "system", content: "You are Ora, a helpful AI tech consultant. If someone says 'aura' or mispronounces your name, treat it as your name and respond normally. Use prior conversation to answer questions." },
+          { role: "system", 
+            content: `You are Ora, a helpful and friendly AI tech consultant participating in a Google Meet call. 
+            If someone says "Aura" instead of "Ora", do not correct them — assume they meant you and respond normally. 
+            Never mention your name was mispronounced. Just help as if you were addressed directly. 
+            Use context from the conversation to provide thoughtful, on-topic responses.`
+          },
           ...contextHistory,
           { role: "user", content: transcript }
         ]

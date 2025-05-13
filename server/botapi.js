@@ -13,8 +13,6 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 import textToSpeech from '@google-cloud/text-to-speech';
 
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,14 +29,45 @@ initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
 const GROQ_API_KEY = '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';
-
-// In-memory session store
-const sessionLogs = new Map();
-
 const ttsClient = new textToSpeech.TextToSpeechClient({
   keyFilename: './google-tts-key.json'
 });
 
+// In-memory session store
+const sessionLogs = new Map();
+
+// Whisper Helper
+async function convertToWav(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .input(inputPath)
+      .inputFormat('webm')
+      .toFormat('wav')
+      .on('end', resolve)
+      .on('error', reject)
+      .save(outputPath);
+  });
+}
+
+async function whisperToText(wavPath) {
+  const buffer = fs.readFileSync(wavPath);
+  const form = new FormData();
+  form.append('file', buffer, { filename: 'audio.wav' });
+  form.append('model', 'whisper-1');
+
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: form
+  });
+
+  const data = await res.json();
+  return data.text?.trim() || '';
+}
+
+// TTS Endpoint
 app.post('/tts', async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: "Missing text" });
@@ -46,10 +75,7 @@ app.post('/tts', async (req, res) => {
   try {
     const [response] = await ttsClient.synthesizeSpeech({
       input: { text },
-      voice: {
-        languageCode: 'en-US',
-        name: 'en-US-Wavenet-C', // voice
-      },
+      voice: { languageCode: 'en-US', name: 'en-US-Wavenet-F' },
       audioConfig: { audioEncoding: 'MP3' },
     });
 
@@ -60,66 +86,27 @@ app.post('/tts', async (req, res) => {
     res.status(500).json({ error: "TTS failed" });
   }
 });
+
+// Basic start route
 app.post('/start-bot', (req, res) => {
   console.log("/start-bot received.");
   res.json({ success: true, message: "Ora launched successfully!" });
 });
 
-app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
-  const uid = req.body.uid;
-  if (!uid) return res.status(400).json({ error: "Missing UID" });
+// Lightweight route for checking trigger & storing transcript
+app.post('/local-transcript', upload.single('audio'), async (req, res) => {
+  const { uid, sessionId } = req.body;
+  if (!uid || !sessionId) return res.status(400).json({ error: "Missing uid or sessionId" });
 
-  const sessionId = req.body.sessionId;
-  if (!sessionId) return res.status(400).json({ error: "Missing sessionId" });
-
-  console.log("[STEP 1] Received audio upload");
   const audioPath = req.file?.path;
-  if (!audioPath) return res.status(400).json({ error: "No audio uploaded" });
-
   const wavPath = audioPath + '.wav';
 
   try {
-    const stats = fs.statSync(audioPath);
-    console.log("Uploaded file size:", stats.size);
-    if (stats.size < 1000) {
-      console.warn("Audio file too small — skipping transcription.");
-      return res.status(400).json({ error: "Audio too small" });
-    }
+    await convertToWav(audioPath, wavPath);
+    const transcript = await whisperToText(wavPath);
 
-    console.log("[STEP 2] Running ffmpeg to convert to WAV...");
-    await new Promise((resolve, reject) => {
-      ffmpeg()
-        .input(audioPath)
-        .inputFormat('webm')
-        .toFormat('wav')
-        .on('end', resolve)
-        .on('error', reject)
-        .save(wavPath);
-    });
-
-    console.log("[STEP 3] Transcribing with OpenAI Whisper API...");
-    const audioBuffer = fs.readFileSync(wavPath);
-
-    const form = new FormData();
-    form.append('file', audioBuffer, { filename: 'audio.wav' });
-    form.append('model', 'whisper-1');
-
-    const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: form
-    });
-
-    const whisperData = await whisperRes.json();
-    console.log("Whisper raw response:", whisperData);
-
-    const transcript = whisperData?.text?.trim();
-    if (!transcript) throw new Error("Transcript was empty or failed");
-
-    const lowerTranscript = transcript.toLowerCase();
-    const isTrigger = /\b(ora|aura)\b/.test(lowerTranscript);
+    const lower = transcript.toLowerCase();
+    const isTrigger = /\b(ora|aura)\b/.test(lower);
 
     const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
     await logsRef.add({
@@ -129,11 +116,30 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       triggered: isTrigger
     });
 
-    if (!isTrigger) {
-      console.log("No trigger phrase detected. Skipping response.");
-      return res.json({ triggered: false, response: null });
-    }
+    fs.unlinkSync(audioPath);
+    fs.unlinkSync(wavPath);
 
+    res.json({ triggered: isTrigger, transcript });
+  } catch (e) {
+    console.error("Local transcript error:", e);
+    res.status(500).json({ error: "Failed to transcribe" });
+  }
+});
+
+// Full response generation with memory
+app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
+  const { uid, sessionId } = req.body;
+  if (!uid || !sessionId) return res.status(400).json({ error: "Missing uid or sessionId" });
+
+  const audioPath = req.file?.path;
+  const wavPath = audioPath + '.wav';
+
+  try {
+    await convertToWav(audioPath, wavPath);
+    const transcript = await whisperToText(wavPath);
+    const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
+
+    // Fetch context history
     const snap = await logsRef.orderBy('createdAt', 'desc').limit(10).get();
     const contextHistory = [];
     snap.docs.reverse().forEach(doc => {
@@ -141,8 +147,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       if (data.userSaid) contextHistory.push({ role: "user", content: data.userSaid });
       if (data.oraSaid) contextHistory.push({ role: "assistant", content: data.oraSaid });
     });
-    
-    console.log("Final Transcript:", transcript);
 
     const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -153,7 +157,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       body: JSON.stringify({
         model: "llama3-8b-8192",
         messages: [
-          { role: "system", content: "You are Ora, a helpful AI tech consultant in a Google Meet. Respond clearly and concisely based on prior conversation." },
+          { role: "system", content: "You are Ora, a helpful AI tech consultant. If someone says 'aura' or mispronounces your name, treat it as your name and respond normally. Use prior conversation to answer questions." },
           ...contextHistory,
           { role: "user", content: transcript }
         ]
@@ -162,12 +166,11 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
     const aiData = await aiRes.json();
     const reply = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't understand.";
-    console.log("Ora AI Reply:", reply);
 
-    // Store the transcript in session memory instead of Firestore immediately
+    // Save reply
     const prev = sessionLogs.get(uid) || '';
-    const newLog = `${prev}User said: ${transcript}\nOra said: ${reply}\n\n`;
-    sessionLogs.set(uid, newLog);
+    sessionLogs.set(uid, `${prev}User said: ${transcript}\nOra said: ${reply}\n\n`);
+
     await logsRef.add({
       createdAt: Timestamp.now(),
       userSaid: null,
@@ -175,19 +178,17 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       triggered: true
     });
 
-    // Clean up
     fs.unlinkSync(audioPath);
     fs.unlinkSync(wavPath);
 
     res.json({ triggered: true, response: reply });
-
   } catch (error) {
     console.error("[ERROR] Speech-to-text processing error:", error);
     res.status(500).json({ error: "Processing error" });
   }
 });
 
-// Save full session to Firestore on manual request
+// Save full transcript at end
 app.post('/end-session', async (req, res) => {
   const { uid } = req.body;
   if (!uid || !sessionLogs.has(uid)) return res.status(400).json({ error: "No session found" });
@@ -202,7 +203,7 @@ app.post('/end-session', async (req, res) => {
       time: now.toLocaleTimeString(),
       fullTranscript: transcript
     });
-    sessionLogs.delete(uid); // Clear from memory
+    sessionLogs.delete(uid);
     res.json({ success: true, message: "Session saved to Firebase." });
   } catch (err) {
     console.error("Error saving session:", err);

@@ -2,11 +2,12 @@
   if (!window.location.href.includes("meet.google.com")) return;
 
   const uid = localStorage.getItem("ora_uid");
-  const sessionId = new URL(window.location.href).pathname.replace(/\//g, "-");
   if (!uid) {
     console.warn("UID not found — aborting Ora inject.");
     return;
   }
+
+  const sessionId = new URL(window.location.href).pathname.replace(/\//g, "-");
 
   console.log("Ora script injected. Waiting for launch trigger...");
 
@@ -24,12 +25,14 @@
       analyser.fftSize = 256;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
       source.connect(analyser);
+
       createAudioMeter();
     }
   }
 
   function createAudioMeter() {
-    if (document.getElementById("ora-meter")) return;
+    const existing = document.getElementById("ora-meter");
+    if (existing) return;
 
     const meter = document.createElement("div");
     meter.id = "ora-meter";
@@ -53,7 +56,9 @@
     function updateMeter() {
       if (!analyser || !dataArray) return;
       analyser.getByteTimeDomainData(dataArray);
-      const rms = Math.sqrt(dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length);
+      const rms = Math.sqrt(
+        dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length
+      );
       const percent = Math.min((rms / 128) * 100, 100);
       level.style.width = `${percent}%`;
       requestAnimationFrame(updateMeter);
@@ -80,26 +85,38 @@
       formData.append("audio", blob, "chunk.webm");
       formData.append("uid", uid);
       formData.append("sessionId", sessionId);
+
       try {
-        const response = await fetch("https://icsi499.onrender.com/speech-to-text", {
+        // Send to local-transcript to log + detect trigger
+        const transcriptRes = await fetch("https://icsi499.onrender.com/local-transcript", {
           method: "POST",
           body: formData,
         });
 
-        const result = await response.json();
-        console.log("Server response:", result);
+        const transcriptData = await transcriptRes.json();
+        console.log("Transcript:", transcriptData.transcript);
 
-        if (result.triggered && result.response) {
-          const utterance = new SpeechSynthesisUtterance(result.response);
-          utterance.lang = "en-US";
-          playTTS(result.response);
+        if (transcriptData.triggered) {
+          // Send to speech-to-text to get Ora reply
+          const aiRes = await fetch("https://icsi499.onrender.com/speech-to-text", {
+            method: "POST",
+            body: formData,
+          });
+
+          const aiData = await aiRes.json();
+          console.log("Ora reply:", aiData.response);
+
+          if (aiData.response) {
+            const utterance = new SpeechSynthesisUtterance(aiData.response);
+            utterance.lang = "en-US";
+            speechSynthesis.speak(utterance);
+          }
         }
       } catch (e) {
         console.error("Error sending audio:", e);
       }
 
-      // Schedule next chunk
-      if (isListening) setTimeout(startRecordingLoop, 2000);
+      setTimeout(startRecordingLoop, 2000); // repeat
     };
 
     mediaRecorder.start();
@@ -125,35 +142,6 @@
     if (event.data.type === "ORA_STOP") {
       isListening = false;
       console.log("Ora listening stopped");
-
-      // Send full session save request
-      try {
-        const saveResp = await fetch("https://icsi499.onrender.com/end-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid }),
-        });
-
-        const saveResult = await saveResp.json();
-        console.log("Session saved:", saveResult);
-      } catch (e) {
-        console.error("Error saving session log:", e);
-      }
     }
   });
 })();
-
-function playTTS(text) {
-  fetch("https://icsi499.onrender.com/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  })
-  .then(res => res.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
-  })
-  .catch(err => console.error("TTS error:", err));
-}

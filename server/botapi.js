@@ -13,6 +13,28 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 import textToSpeech from '@google-cloud/text-to-speech';
 
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const upload = multer({ dest: os.tmpdir() });
+
+const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-key.json'), 'utf8'));
+initializeApp({ credential: cert(serviceAccount) });
+const db = getFirestore();
+
+const GROQ_API_KEY = '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';
+
+// In-memory session store
+const sessionLogs = new Map();
+
 const ttsClient = new textToSpeech.TextToSpeechClient({
   keyFilename: './google-tts-key.json'
 });
@@ -38,27 +60,6 @@ app.post('/tts', async (req, res) => {
     res.status(500).json({ error: "TTS failed" });
   }
 });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const upload = multer({ dest: os.tmpdir() });
-
-const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-key.json'), 'utf8'));
-initializeApp({ credential: cert(serviceAccount) });
-const db = getFirestore();
-
-const GROQ_API_KEY = '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';
-
-// In-memory session store
-const sessionLogs = new Map();
-
 app.post('/start-bot', (req, res) => {
   console.log("/start-bot received.");
   res.json({ success: true, message: "Ora launched successfully!" });

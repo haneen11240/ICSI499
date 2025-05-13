@@ -21,15 +21,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: os.tmpdir() }); // safe temporary file storage
+const upload = multer({ dest: os.tmpdir() });
 
 const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-key.json'), 'utf8'));
-initializeApp({
-  credential: cert(serviceAccount)
-});
+initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 
 const GROQ_API_KEY = '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';
+
+// In-memory session store
+const sessionLogs = new Map();
 
 app.post('/start-bot', (req, res) => {
   console.log("/start-bot received.");
@@ -45,7 +46,6 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
   if (!audioPath) return res.status(400).json({ error: "No audio uploaded" });
 
   const wavPath = audioPath + '.wav';
-  const timestamp = Date.now();
 
   try {
     const stats = fs.statSync(audioPath);
@@ -114,22 +114,43 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     const reply = aiData.choices?.[0]?.message?.content || "Sorry, I couldn't understand.";
     console.log("Ora AI Reply:", reply);
 
-    // ✅ Save transcript + reply directly to Firestore
-    await db.collection('users').doc(uid).collection('logs').add({
-      createdAt: Timestamp.now(),
-      userSaid: transcript,
-      oraSaid: reply
-    });
+    // Store the transcript in session memory instead of Firestore immediately
+    const prev = sessionLogs.get(uid) || '';
+    const newLog = `${prev}User said: ${transcript}\nOra said: ${reply}\n\n`;
+    sessionLogs.set(uid, newLog);
 
-    // ✅ Clean up temporary files
+    // Clean up
     fs.unlinkSync(audioPath);
     fs.unlinkSync(wavPath);
 
     res.json({ triggered: true, response: reply });
 
   } catch (error) {
-    console.error("❌ [ERROR] Speech-to-text processing error:", error);
+    console.error("[ERROR] Speech-to-text processing error:", error);
     res.status(500).json({ error: "Processing error" });
+  }
+});
+
+// Save full session to Firestore on manual request
+app.post('/end-session', async (req, res) => {
+  const { uid } = req.body;
+  if (!uid || !sessionLogs.has(uid)) return res.status(400).json({ error: "No session found" });
+
+  const transcript = sessionLogs.get(uid);
+  const now = new Date();
+
+  try {
+    await db.collection('users').doc(uid).collection('meetings').add({
+      createdAt: Timestamp.now(),
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      fullTranscript: transcript
+    });
+    sessionLogs.delete(uid); // Clear from memory
+    res.json({ success: true, message: "Session saved to Firebase." });
+  } catch (err) {
+    console.error("Error saving session:", err);
+    res.status(500).json({ error: "Failed to save session." });
   }
 });
 

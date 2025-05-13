@@ -23,14 +23,12 @@
       analyser.fftSize = 256;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
       source.connect(analyser);
-
       createAudioMeter();
     }
   }
 
   function createAudioMeter() {
-    const existing = document.getElementById("ora-meter");
-    if (existing) return;
+    if (document.getElementById("ora-meter")) return;
 
     const meter = document.createElement("div");
     meter.id = "ora-meter";
@@ -54,9 +52,7 @@
     function updateMeter() {
       if (!analyser || !dataArray) return;
       analyser.getByteTimeDomainData(dataArray);
-      const rms = Math.sqrt(
-        dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length
-      );
+      const rms = Math.sqrt(dataArray.reduce((sum, val) => sum + (val - 128) ** 2, 0) / dataArray.length);
       const percent = Math.min((rms / 128) * 100, 100);
       level.style.width = `${percent}%`;
       requestAnimationFrame(updateMeter);
@@ -101,7 +97,8 @@
         console.error("Error sending audio:", e);
       }
 
-      setTimeout(startRecordingLoop, 2000);
+      // Schedule next chunk
+      if (isListening) setTimeout(startRecordingLoop, 2000);
     };
 
     mediaRecorder.start();
@@ -127,6 +124,20 @@
     if (event.data.type === "ORA_STOP") {
       isListening = false;
       console.log("Ora listening stopped");
+
+      // Send full session save request
+      try {
+        const saveResp = await fetch("https://icsi499.onrender.com/end-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid }),
+        });
+
+        const saveResult = await saveResp.json();
+        console.log("Session saved:", saveResult);
+      } catch (e) {
+        console.error("Error saving session log:", e);
+      }
     }
   });
 })();

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ora Voice Setup</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+      background: #111;
+      color: white;
+    }
+    button {
+      padding: 1rem;
+      border-radius: 20px;
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      background: #c084fc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #9b5de5;
+    }
+    img {
+      width: 100px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <img src="ORA.png" alt="Ora Icon" />
+  <h1>🔊 Enable Ora’s Voice</h1>
+  <p>Install a virtual microphone so others can hear Ora in Google Meet.</p>
+  <button id="installBtn">Install VB-Audio Cable</button>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("installBtn");
+      btn.addEventListener("click", () => {
+        if (window.oraInstaller && typeof window.oraInstaller.installDriver === "function") {
+          window.oraInstaller.installDriver();
+        } else {
+          alert("❌ Ora installer failed to load. Please restart the app or check preload script.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

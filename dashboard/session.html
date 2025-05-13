@@ -60,7 +60,7 @@
   <body>
     <h1 id="sessionName">Loading...</h1>
 
-    <div class="info" id="meetingInfo"></div>
+    <div class="info" id="meetingInfo">Loading...</div>
 
     <div class="summary" id="summaryText">
       <h3>Loading transcript...</h3>
@@ -73,6 +73,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
       import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyC_E91yz5ARm3vbq_55JfHjfYr0FJ3oB_o",
@@ -86,42 +87,47 @@
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
+      const auth = getAuth();
 
       const sessionId = localStorage.getItem("selectedSession");
-      const user = JSON.parse(localStorage.getItem("firebase:authUser:ora-tech-79eae:[DEFAULT]"));
+      const sessionDate = localStorage.getItem("selectedSessionDate") || "Unknown";
+      const sessionTime = localStorage.getItem("selectedSessionTime") || "Unknown";
 
-      if (!user || !sessionId) {
-        alert("Session not found.");
-        window.location.href = "dashboard.html";
-      }
+      document.getElementById("sessionName").textContent = sessionId || "No session selected";
+      document.getElementById("meetingInfo").innerHTML = `
+        Date: <strong>${sessionDate}</strong><br>
+        Time: <strong>${sessionTime}</strong>
+      `;
 
-      document.getElementById("sessionName").textContent = sessionId;
+      onAuthStateChanged(auth, async (user) => {
+        if (!user || !sessionId) {
+          alert("User not authenticated or session ID missing.");
+          window.location.href = "dashboard.html";
+          return;
+        }
 
-      const docRef = doc(db, `users/${user.uid}/meetings/${sessionId}`);
-      const docSnap = await getDoc(docRef);
+        const docRef = doc(db, `users/${user.uid}/meetings/${sessionId}`);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        document.getElementById("meetingInfo").innerHTML = `
-          Date: <strong>${data.date}</strong><br>
-          Time: <strong>${data.time}</strong>
-        `;
-        document.getElementById("summaryText").innerHTML = `
-          <h3>Full Transcript</h3>
-          <pre style="white-space: pre-wrap;">${data.fullTranscript}</pre>
-        `;
-      } else {
-        document.getElementById("summaryText").innerHTML = `<p>Transcript not found.</p>`;
-      }
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById("summaryText").innerHTML = `
+            <h3>Full Transcript</h3>
+            <pre style="white-space: pre-wrap;">${data.fullTranscript}</pre>
+          `;
 
-      window.downloadSummary = function () {
-        const content = docSnap.exists() ? docSnap.data().fullTranscript : "No transcript available.";
-        const blob = new Blob([content], { type: "text/plain" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${sessionId}-Transcript.txt`;
-        link.click();
-      };
+          window.downloadSummary = function () {
+            const blob = new Blob([data.fullTranscript], { type: "text/plain" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${sessionId}-Transcript.txt`;
+            link.click();
+          };
+
+        } else {
+          document.getElementById("summaryText").innerHTML = `<p>Transcript not found in Firebase.</p>`;
+        }
+      });
 
       window.goBackToDashboard = function () {
         window.location.href = "dashboard.html";

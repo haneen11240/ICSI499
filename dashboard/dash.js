@@ -52,7 +52,12 @@ function loadTranscripts(userId) {
       const data = doc.data();
       const div = document.createElement('div');
       div.className = 'session-item';
-      div.onclick = () => openSession(doc.id);
+      div.onclick = () => {
+        localStorage.setItem("selectedSession", doc.id);
+        localStorage.setItem("selectedSessionDate", data.date);
+        localStorage.setItem("selectedSessionTime", data.time);
+        window.location.href = "session.html";
+      };
       div.innerHTML = `
         <img src="ORA.png" alt="Session Image"/>
         <p>${data.date} – ${data.time}</p>

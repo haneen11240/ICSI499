@@ -88,13 +88,6 @@ function hideOraSetupModal() {
   localStorage.setItem("ora_setup_complete", "true");
 }
 
-function getDriverLink() {
-  const platform = navigator.platform.toLowerCase();
-  if (platform.includes("win")) return "https://vb-audio.com/Cable/VBCABLE_Driver_Pack43.zip";
-  if (platform.includes("mac")) return "https://existential.audio/blackhole/";
-  return "https://wiki.archlinux.org/title/PipeWire#Loopback_module";
-}
-
 function downloadDriver() {
   window.open(getDriverLink(), "_blank");
 }
@@ -102,8 +95,11 @@ function downloadDriver() {
 async function runOraTest() {
   await navigator.mediaDevices.getUserMedia({ audio: true });
   const devices = await navigator.mediaDevices.enumerateDevices();
+
   const hasCable = devices.some(d =>
-    d.label.toLowerCase().includes("cable") || d.label.toLowerCase().includes("blackhole")
+    d.label.toLowerCase().includes("cable") ||
+    d.label.toLowerCase().includes("voice") ||
+    d.label.toLowerCase().includes("voicemeeter")
   );
 
   const msg = new SpeechSynthesisUtterance("Hello! This is Ora. Can you hear me?");
@@ -111,15 +107,18 @@ async function runOraTest() {
 
   setTimeout(() => {
     if (hasCable) {
-      alert("✅ Virtual mic detected. Ask someone in the Meet if they heard Ora.");
+      alert("✅ Virtual mic and/or VoiceMeeter detected. You're ready!");
     } else {
-      alert("⚠️ No virtual mic detected. Please install the audio driver before using Ora.");
+      const downloadConfirm = confirm("⚠️ No VB-Cable or VoiceMeeter detected. Do you want to download and install the audio setup?");
+      if (downloadConfirm) {
+        window.open("OraAudioSetup.exe", "_blank"); // This assumes the file is in your public directory
+      }
     }
   }, 4000);
 }
 
 // Button listeners
-document.getElementById("oraInstallBtn").addEventListener("click", downloadDriver);
+document.getElementById("oraInstallBtn").addEventListener("click", runOraTest);
 document.getElementById("oraTestBtn").addEventListener("click", runOraTest);
 document.getElementById("oraDoneBtn").addEventListener("click", hideOraSetupModal);
 

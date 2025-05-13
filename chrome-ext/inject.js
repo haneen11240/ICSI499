@@ -8,13 +8,15 @@
   }
 
   const sessionId = new URL(window.location.href).pathname.replace(/\//g, "-");
-
   console.log("Ora script injected. Waiting for launch trigger...");
 
   const options = { mimeType: "audio/webm;codecs=opus" };
   let stream = null;
   let isListening = false;
   let audioCtx, analyser, dataArray;
+  let transcriptCache = [];
+  let fullTranscript = "";
+  let isResponding = false;
 
   async function setupStream() {
     if (!stream) {
@@ -25,7 +27,6 @@
       analyser.fftSize = 256;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
       source.connect(analyser);
-
       createAudioMeter();
     }
   }
@@ -68,7 +69,7 @@
   }
 
   async function startRecordingLoop() {
-    if (!isListening) return;
+    if (!isListening || isResponding) return;
 
     const mediaRecorder = new MediaRecorder(stream, options);
     const chunks = [];
@@ -78,7 +79,7 @@
     };
 
     mediaRecorder.onstop = async () => {
-      if (!isListening) return;
+      if (!isListening || isResponding) return;
 
       const blob = new Blob(chunks, { type: "audio/webm" });
       const formData = new FormData();
@@ -87,32 +88,35 @@
       formData.append("sessionId", sessionId);
 
       try {
-        // Send to local-transcript to log + detect trigger
         const transcriptRes = await fetch("https://icsi499.onrender.com/local-transcript", {
           method: "POST",
           body: formData,
         });
 
         const transcriptData = await transcriptRes.json();
-        console.log("Transcript:", transcriptData.transcript);
+        const transcript = transcriptData.transcript || "";
+        transcriptCache.push(transcript);
+        fullTranscript += `User said: ${transcript}\n`;
+        console.log("Transcript:", transcript);
 
         if (transcriptData.triggered) {
-          // Send to speech-to-text to get Ora reply
+          isResponding = true;
+
           const aiRes = await fetch("https://icsi499.onrender.com/speech-to-text", {
             method: "POST",
             body: formData,
           });
 
           const aiData = await aiRes.json();
-          console.log("Ora reply:", aiData.response);
+          const reply = aiData.response;
+          fullTranscript += `Ora said: ${reply}\n\n`;
+          console.log("Ora reply:", reply);
 
-          if (aiData.response) {
+          if (reply) {
             const ttsRes = await fetch("https://icsi499.onrender.com/tts", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ text: aiData.response }),
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: reply }),
             });
 
             if (ttsRes.ok) {
@@ -133,21 +137,29 @@
                   console.warn("VB-Cable device not found. Using default audio output.");
                 }
 
+                audio.onended = () => {
+                  isResponding = false;
+                  startRecordingLoop();
+                };
+
                 audio.play();
               } catch (err) {
                 console.error("Failed to set VB-Cable as output device:", err);
-                audio.play(); // fallback
+                audio.play();
+                audio.onended = () => {
+                  isResponding = false;
+                  startRecordingLoop();
+                };
               }
-                } else {
-              console.error("TTS fetch failed");
             }
           }
+        } else {
+          setTimeout(startRecordingLoop, 1000);
         }
       } catch (e) {
         console.error("Error sending audio:", e);
+        setTimeout(startRecordingLoop, 1000);
       }
-
-      setTimeout(startRecordingLoop, 2000); // repeat
     };
 
     mediaRecorder.start();
@@ -173,6 +185,23 @@
     if (event.data.type === "ORA_STOP") {
       isListening = false;
       console.log("Ora listening stopped");
+
+      try {
+        const res = await fetch("https://icsi499.onrender.com/end-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid, fullTranscript }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          console.log("✅ Session saved to Firebase.");
+        } else {
+          console.warn("⚠️ Error saving session:", data.message);
+        }
+      } catch (err) {
+        console.error("❌ Failed to send full transcript:", err);
+      }
     }
   });
 })();

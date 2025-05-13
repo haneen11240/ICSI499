@@ -108,14 +108,6 @@ app.post('/local-transcript', upload.single('audio'), async (req, res) => {
     const lower = transcript.toLowerCase();
     const isTrigger = /\b(ora|aura)\b/.test(lower);
 
-    const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
-    await logsRef.add({
-      createdAt: Timestamp.now(),
-      userSaid: transcript,
-      oraSaid: null,
-      triggered: isTrigger
-    });
-
     fs.unlinkSync(audioPath);
     fs.unlinkSync(wavPath);
 
@@ -178,7 +170,7 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
     await logsRef.add({
       createdAt: Timestamp.now(),
-      userSaid: null,
+      userSaid: transcript,
       oraSaid: reply,
       triggered: true
     });
@@ -195,10 +187,9 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
 // Save full transcript at end
 app.post('/end-session', async (req, res) => {
-  const { uid } = req.body;
-  if (!uid || !sessionLogs.has(uid)) return res.status(400).json({ error: "No session found" });
+  const { uid, fullTranscript } = req.body;
+  if (!uid || !fullTranscript) return res.status(400).json({ error: "Missing UID or full transcript" });
 
-  const transcript = sessionLogs.get(uid);
   const now = new Date();
 
   try {
@@ -206,9 +197,9 @@ app.post('/end-session', async (req, res) => {
       createdAt: Timestamp.now(),
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString(),
-      fullTranscript: transcript
+      fullTranscript
     });
-    sessionLogs.delete(uid);
+
     res.json({ success: true, message: "Session saved to Firebase." });
   } catch (err) {
     console.error("Error saving session:", err);

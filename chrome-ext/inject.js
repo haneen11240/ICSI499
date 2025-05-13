@@ -107,9 +107,22 @@
           console.log("Ora reply:", aiData.response);
 
           if (aiData.response) {
-            const utterance = new SpeechSynthesisUtterance(aiData.response);
-            utterance.lang = "en-US";
-            speechSynthesis.speak(utterance);
+            const ttsRes = await fetch("https://icsi499.onrender.com/tts", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: aiData.response }),
+            });
+
+            if (ttsRes.ok) {
+              const audioBlob = await ttsRes.blob();
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const audio = new Audio(audioUrl);
+              audio.play();
+            } else {
+              console.error("TTS fetch failed");
+            }
           }
         }
       } catch (e) {

@@ -119,8 +119,8 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
     if (!transcript) throw new Error("Transcript was empty or failed");
 
     const lowerTranscript = transcript.toLowerCase();
-    const isTrigger = lowerTranscript.includes("ora,") || lowerTranscript.includes("ora what do you think");
-    
+    const isTrigger = /\b(ora|aura)\b/.test(lowerTranscript);
+
     const logsRef = db.collection('users').doc(uid).collection('sessions').doc(sessionId).collection('logs');
     await logsRef.add({
       createdAt: Timestamp.now(),

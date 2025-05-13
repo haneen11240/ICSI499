@@ -28,8 +28,17 @@ window.logoutUser = async () => {
   try { await logout(); } catch (err) { alert(err.message); }
 };
 
+async function saveUserProfile(user) {
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: user.email,
+    createdAt: serverTimestamp()
+  }, { merge: true });
+}
+
 onUserStateChange(user => {
   if (user) {
+    saveUserProfile(user);
     authSection.style.display = 'none';
     dashboard.style.display = 'block';
     userEmail.innerText = user.email;
@@ -65,11 +74,6 @@ function loadTranscripts(userId) {
       transcripts.appendChild(div);
     });
   });
-}
-
-function openSession(sessionId) {
-  localStorage.setItem("selectedSession", sessionId);
-  window.location.href = "session.html";
 }
 
 // Optional: Setup modal for Ora audio

@@ -1,4 +1,5 @@
 // auth.js
+import { setDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 import { auth } from './firebase_config.js';
 import {
   GoogleAuthProvider,
@@ -29,4 +30,11 @@ export function logout() {
 
 export function onUserStateChange(callback) {
   return onAuthStateChanged(auth, callback);
+}
+async function saveUserProfile(user) {
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: user.email,
+    createdAt: serverTimestamp()
+  }, { merge: true }); // don't overwrite existing data
 }

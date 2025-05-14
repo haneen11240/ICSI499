@@ -144,13 +144,13 @@
                 } else {
                   console.warn("⚠️ Could not find exact Voicemeeter Input — fallback to default");
                 }
-
+                
+                audio.play();
                 audio.onended = () => {
                   isResponding = false;
-                  startRecordingLoop();
+                  if (isListening) startRecordingLoop();
                 };
       
-                audio.play();
                 audio.onplay = () => console.log("✅ Ora audio playback started");
                 audio.onended = () => console.log("✅ Ora audio playback finished");
               } catch (err) {
@@ -158,7 +158,7 @@
                 audio.play();
                 audio.onended = () => {
                   isResponding = false;
-                  startRecordingLoop();
+                  if (isListening) startRecordingLoop();
                 };
               }
             }

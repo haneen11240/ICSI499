@@ -130,10 +130,6 @@
 
               try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                devices
-                  .filter(d => d.kind === "audiooutput");
-
-                // Force match the correct one
                 const vbDevice = devices.find(d =>
                   d.label.toLowerCase().includes("voicemeeter input") && !d.label.toLowerCase().includes("aux")
                 );
@@ -144,27 +140,28 @@
                 } else {
                   console.warn("⚠️ Could not find exact Voicemeeter Input — fallback to default");
                 }
-                
-                audio.play();
+
+                audio.onplay = () => console.log("✅ Ora audio playback started");
                 audio.onended = () => {
+                  console.log("✅ Ora audio playback finished");
                   isResponding = false;
                   if (isListening) startRecordingLoop();
                 };
-      
-                audio.onplay = () => console.log("✅ Ora audio playback started");
-                audio.onended = () => console.log("✅ Ora audio playback finished");
+
+                audio.play();
               } catch (err) {
                 console.error("Failed to set VB-Cable as output device:", err);
-                audio.play();
                 audio.onended = () => {
+                  console.log("✅ Ora audio playback finished (fallback)");
                   isResponding = false;
                   if (isListening) startRecordingLoop();
                 };
+                audio.play();
               }
             }
           } else {
             isResponding = false;
-            startRecordingLoop();
+            if (isListening) startRecordingLoop();
           }
         } else {
           setTimeout(startRecordingLoop, 1000);
@@ -197,6 +194,7 @@
 
     if (event.data.type === "ORA_STOP") {
       isListening = false;
+      isResponding = false;
       console.log("Ora listening stopped");
 
       const names = Array.from(document.querySelectorAll('[role="listitem"][aria-label]'))
@@ -209,7 +207,7 @@
       const dateStr = now.toLocaleDateString();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const sessionName = `Meeting with ${participants} on ${dateStr} at ${timeStr}`;
-      
+
       try {
         const res = await fetch("https://icsi499.onrender.com/end-session", {
           method: "POST",

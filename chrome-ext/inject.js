@@ -145,8 +145,10 @@
                   isResponding = false;
                   startRecordingLoop();
                 };
-
+                console.log("audio playing:?");
                 audio.play();
+                audio.onplay = () => console.log("✅ Ora audio playback started");
+                audio.onended = () => console.log("✅ Ora audio playback finished");
               } catch (err) {
                 console.error("Failed to set VB-Cable as output device:", err);
                 audio.play();

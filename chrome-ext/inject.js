@@ -130,15 +130,20 @@
 
               try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const vbDevice = devices.find(
-                  (d) => d.kind === "audiooutput" && d.label.toLowerCase().includes("vb-audio")
+                devices
+                  .filter(d => d.kind === "audiooutput")
+                  .forEach(d => console.log(`🔊 OUTPUT: ${d.label} — ${d.deviceId}`));
+
+                // Force match the correct one
+                const vbDevice = devices.find(d =>
+                  d.label.toLowerCase().includes("voicemeeter input") && !d.label.toLowerCase().includes("aux")
                 );
 
-                if (audio.setSinkId && vbDevice) {
+                if (vbDevice && audio.setSinkId) {
                   await audio.setSinkId(vbDevice.deviceId);
-                  console.log("🔊 Ora voice routed to VB-Cable:", vbDevice.label);
+                  console.log("🔁 Ora routed to:", vbDevice.label);
                 } else {
-                  console.warn("⚠️ VB-Cable device not found. Using default audio output.");
+                  console.warn("⚠️ Could not find exact Voicemeeter Input — fallback to default");
                 }
 
                 audio.onended = () => {

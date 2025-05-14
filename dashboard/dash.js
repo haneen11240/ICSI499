@@ -69,7 +69,7 @@ function loadTranscripts(userId) {
       };
       div.innerHTML = `
         <img src="ORA.png" alt="Session Image"/>
-        <p>${data.date} – ${data.time}</p>
+        <p>${data.sessionName || `${data.date} – ${data.time}`}</p>
       `;
       transcripts.appendChild(div);
     });

@@ -184,10 +184,11 @@ app.post('/end-session', async (req, res) => {
 
   try {
     await db.collection('users').doc(uid).collection('meetings').add({
-      createdAt: Timestamp.now(),
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
-      fullTranscript
+       createdAt: Timestamp.now(),
+      fullTranscript,
+      sessionName: sessionName || "Untitled Meeting",
+      date: date || new Date().toLocaleDateString(),
+      time: time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
 
     res.json({ success: true, message: "Session saved to Firebase." });

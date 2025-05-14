@@ -200,11 +200,22 @@
       isListening = false;
       console.log("Ora listening stopped");
 
+      const names = Array.from(document.querySelectorAll('[role="listitem"][aria-label]'))
+        .map(el => el.getAttribute("aria-label"))
+        .filter(Boolean);
+
+      const participants = names.length > 0 ? names.join(", ") : "Unknown Participants";
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sessionName = `Meeting with ${participants} on ${dateStr} at ${timeStr}`;
+      
       try {
         const res = await fetch("https://icsi499.onrender.com/end-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid, fullTranscript }),
+          body: JSON.stringify({ uid, fullTranscript, sessionName, date: dateStr, time: timeStr }),
         });
 
         const data = await res.json();

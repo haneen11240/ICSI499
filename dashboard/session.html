@@ -93,7 +93,7 @@
       const sessionDate = localStorage.getItem("selectedSessionDate") || "Unknown";
       const sessionTime = localStorage.getItem("selectedSessionTime") || "Unknown";
 
-      document.getElementById("sessionName").textContent = sessionId || "No session selected";
+      document.getElementById("sessionName").textContent = data.sessionName || "No session name found";
       document.getElementById("meetingInfo").innerHTML = `
         Date: <strong>${sessionDate}</strong><br>
         Time: <strong>${sessionTime}</strong>

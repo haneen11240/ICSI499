@@ -131,8 +131,7 @@
               try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 devices
-                  .filter(d => d.kind === "audiooutput")
-                  .forEach(d => console.log(`🔊 OUTPUT: ${d.label} — ${d.deviceId}`));
+                  .filter(d => d.kind === "audiooutput");
 
                 // Force match the correct one
                 const vbDevice = devices.find(d =>
@@ -150,7 +149,7 @@
                   isResponding = false;
                   startRecordingLoop();
                 };
-                console.log("audio playing:?");
+      
                 audio.play();
                 audio.onplay = () => console.log("✅ Ora audio playback started");
                 audio.onended = () => console.log("✅ Ora audio playback finished");

@@ -177,14 +177,12 @@ app.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
 // Final session log (compiled full transcript)
 app.post('/end-session', async (req, res) => {
-  const { uid, fullTranscript } = req.body;
+  const { uid, fullTranscript, sessionName, date, time } = req.body;
   if (!uid || !fullTranscript) return res.status(400).json({ error: "Missing UID or full transcript" });
-
-  const now = new Date();
 
   try {
     await db.collection('users').doc(uid).collection('meetings').add({
-       createdAt: Timestamp.now(),
+      createdAt: Timestamp.now(),
       fullTranscript,
       sessionName: sessionName || "Untitled Meeting",
       date: date || new Date().toLocaleDateString(),

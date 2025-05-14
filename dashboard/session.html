@@ -93,7 +93,6 @@
       const sessionDate = localStorage.getItem("selectedSessionDate") || "Unknown";
       const sessionTime = localStorage.getItem("selectedSessionTime") || "Unknown";
 
-      document.getElementById("sessionName").textContent = data.sessionName || "No session name found";
       document.getElementById("meetingInfo").innerHTML = `
         Date: <strong>${sessionDate}</strong><br>
         Time: <strong>${sessionTime}</strong>
@@ -111,6 +110,8 @@
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+
+          document.getElementById("sessionName").textContent = data.sessionName || "No session name found";
           document.getElementById("summaryText").innerHTML = `
             <h3>Full Transcript</h3>
             <pre style="white-space: pre-wrap;">${data.fullTranscript}</pre>

@@ -1,7 +1,7 @@
 Ora – AI Technical Consultant for Google Meet
 Overview
 
-Ora is a real-time AI assistant designed to join Google Meet calls and provide technical support through natural voice interaction. Built as a Chrome extension with a Firebase-connected backend and GROQ LLM integration, Ora listens passively for trigger phrases (like "Ora"), transcribes user speech using Whisper, generates responses using a large language model, and replies using realistic voice synthesis (Google TTS). It is primarily designed for IT/tech consultancy during live video calls.
+Ora is a real-time AI assistant designed to join Google Meet calls and provide technical support through natural voice interaction. Built as a Chrome extension with a Firebase-connected backend and GROQ LLM integration. using Whisper, Ora generates responses using a large language model, and replies using realistic voice synthesis (Google TTS). It is primarily designed for IT/tech consultancy during live video calls.
 
 Key Features
 
@@ -12,21 +12,6 @@ Key Features
 - Dashboard with meeting transcripts
 - Local relay for speech debugging
 - Installable audio setup utility
-
-Project File Structure
-
-- `popup.js` – Extension popup logic (login, launch)
-- `background.js` – Service worker for message routing
-- `inject.js` – Injected into Meet tab; handles listening and TTS
-- `relay.js` – Optional speech relay for local debug
-- `dash.js` – Handles dashboard display and auth state
-- `auth.js` – Firebase authentication helpers
-- `firebase_config.js` – Firebase client setup
-- `botapi.js` – Node.js backend: transcribe, respond, and speak
-- `dashboard.html` / `popup.html` / `session.html` – UI templates
-- `firebase-key.json` / `google-tts-key.json` – Service credentials
-- `package.json` – Backend dependencies
-- `vite.config.js` – Vite bundler config
 
 How to Run Ora
 1. Clone or Download the Repository.

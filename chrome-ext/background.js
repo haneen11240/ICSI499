@@ -1,36 +1,44 @@
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("✅ Extension installed");
-  });
+/**
+ * Ora: AI Technical Consultant for Google Meet
+ * 
+ * File: background.js
+ * Purpose: Background service worker for the Ora Chrome Extension
+ * 
+ * Description:
+ * This file listens for Chrome extension events and runtime messages. It handles
+ * user authentication state, manages keep-alive timers, and sends a launch request
+ * to the backend API when the user initiates Ora in a Google Meet.
+ * 
+ * Authors:
+ * - Enea Zguro
+ * - Ilyas Tahari
+ * - Elissa Jagroop
+ * - Haneen Qasem
+ * 
+ * Institution: SUNY University at Albany  
+ * Course: ICSI499 Capstone Project, Spring 2025  
+ * Instructor: Dr. Pradeep Atrey
+ */
   
-  chrome.runtime.onStartup.addListener(() => {
-    console.log("✅ Chrome started");
-  });
-  
-  chrome.alarms.create('keepAlive', { periodInMinutes: 5 });
-  chrome.alarms.onAlarm.addListener((alarm) => {
-    console.log("⏰ Alarm triggered:", alarm.name);
-  });
-  
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  //sign up/in logic and authentication
+  chrome.runtime.onMessage.addListener((message, sendResponse) => {
     if (message.type === "triggerOra") {
-      console.log("Received triggerOra message:", message);
         
       if (!message.userId) {
-        console.log("❌ No user ID detected. Prompting login.");
   
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
             func: () => {
-              alert("⚠️ You must sign in to Ora first. Please click the extension icon and log in.");
+              alert("You must sign in to Ora first. Please click the extension icon and log in.");
             }
           });
         });
   
-        // Also open the extension popup immediately
+        // open the extension popup
         chrome.action.openPopup();
   
-        sendResponse({ success: false, message: "No user signed in. Popup opened." });
+        sendResponse({ success: false, message: "No user signed in" });
         return;
       }
 
@@ -39,7 +47,7 @@ chrome.runtime.onInstalled.addListener(() => {
       const payload = {
         meetUrl: message.meetUrl,
         platform: message.platform,
-        userId: message.userId // ✅ coming from popup.js
+        userId: message.userId // from popup.js
       };
 
       fetch(oraLaunchEndpoint, {
@@ -53,13 +61,10 @@ chrome.runtime.onInstalled.addListener(() => {
         if (!response.ok) {
           throw new Error(`Server responded with ${response.status}`);
         }
-        const data = await response.json();
-        console.log("✅ Launch response:", data);
         sendResponse({ success: true, message: "Ora launched successfully!" });
       })
       .catch((error) => {
-        console.error("❌ Error launching Ora:", error);
-        sendResponse({ success: false, message: "Failed to launch Ora." });
+        sendResponse({ success: false, message: "Failed to launch: ", error });
       });
   
       return true; 

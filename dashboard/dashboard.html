@@ -1,3 +1,23 @@
+<!--
+Ora: AI Technical Consultant for Google Meet
+
+File: dashboard.html
+Purpose: Main user interface after login.
+
+Description:
+Displays session summaries, Ora driver installers, and renders saved transcripts dynamically.
+
+Authors:
+- Enea Zguro
+- Ilyas Tahari
+- Elissa Jagroop
+- Haneen Qasem
+
+Institution: SUNY University at Albany
+Course: ICSI499 Capstone Project, Spring 2025
+Instructor: Dr. Pradeep Atrey
+-->
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,14 +25,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ora User Dashboard</title>
 
-    <!-- Font -->
     <link
       href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap"
       rel="stylesheet"
     />
 
     <style>
-      /* Reset */
 * {
   margin: 0;
   padding: 0;
@@ -26,7 +44,6 @@ html, body {
   color: #f8f8f8;
 }
 
-/* Header (Top) */
 header {
   width: 100%;
   background: #111;
@@ -60,13 +77,11 @@ header {
   text-shadow: 0 0 10px #c084fc;
 }
 
-/* Page Layout (Sidebar + Main) */
 .page-container {
   display: flex;
-  min-height: calc(100vh - 100px); /* Leaves space for the header */
+  min-height: calc(100vh - 100px);
 }
 
-/* Sidebar */
 .sidebar {
   width: 220px;
   background: #111;
@@ -116,7 +131,6 @@ header {
   color: white;
 }
 
-/* Main Content */
 .main-content {
   flex: 1;
   background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
@@ -124,7 +138,6 @@ header {
   transition: margin-left 0.3s ease;
 }
 
-/* Main Area (login, dashboard sections) */
 main {
   flex: 1;
   display: flex;
@@ -143,7 +156,6 @@ h2, h3 {
   margin-bottom: 1.5rem;
 }
 
-/* Input and Button Styling */
 input, button {
   width: 100%;
   max-width: 400px;
@@ -184,7 +196,6 @@ button:hover {
   transform: scale(1.08);
 }
 
-/* Session grid */
 .session-grid {
   display: flex;
   flex-wrap: wrap;
@@ -219,7 +230,6 @@ button:hover {
   color: white;
 }
 
-/* Footer */
 footer {
   width: 100%;
   background-color: #1a1a1a;
@@ -282,7 +292,6 @@ footer {
     </style>
   </head>
   <body>
-      <!-- Full Header at the Top -->
       <header>
         <div class="logo-title">
           <img src="ORA.png" alt="Ora Logo" />
@@ -290,16 +299,12 @@ footer {
         </div>
       </header>
     
-      <!-- Sidebar + Main Content wrapped together -->
       <div class="page-container">
         
-        <!-- Sidebar on the Left -->
         <div class="sidebar" id="sidebar">
           <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
           <nav class="menu">
             <a href="https://meet.google.com/" target="_blank"">New Meeting</a>
-            <!-- <a href="settings.html">Settings</a>
-            <a href="help.html">Help & Support</a> -->
             <a href="OraAudioSetup.exe">
               New user? Install Ora drivers
             </a>
@@ -307,10 +312,8 @@ footer {
           </nav>
         </div>
     
-        <!-- Main Content on the Right -->
         <div class="main-content">
-    
-          <!-- Main dashboard area -->
+
           <main>
             <div id="auth-section" class="section">
               <h2>Login or Sign Up</h2>
@@ -331,10 +334,10 @@ footer {
               </div>
             </div>
           </main>
-          <!-- Ora Voice Setup Modal -->
+
           <div id="oraSetupModal" style="display: none;" class="ora-modal">
-            <h2>🔊 Enable Ora’s Voice in Google Meet</h2>
-            <p>To allow Ora to speak in your meetings, install a virtual audio device.</p>
+            <h2>Enable Ora’s Voice in Google Meet</h2>
+            <p>To allow Ora to speak in your meetings, install the drivers.</p>
 
             <a href="OraAudioSetup.exe" download>
               <button class="install-btn">Download Ora Audio Setup</button>
@@ -343,16 +346,13 @@ footer {
             <button id="oraDoneBtn">I'm All Set</button>
           </div>
 
-          <!-- Footer at the bottom -->
-         
-    
-        </div> <!-- End of .main-content -->
-      </div> <!-- End of .page-container -->
+        </div>
+      </div>
     
       <footer>
         <p>© 2025 Ora — Your Personal AI Tech Consultant</p>
       </footer>
-      <!-- Scripts -->
+      
       <script type="module" src="dash.js"></script>
       <script>
         function toggleSidebar() {

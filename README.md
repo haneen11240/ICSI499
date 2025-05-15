@@ -1,18 +1,60 @@
-## Getting Started
+Ora – AI Technical Consultant for Google Meet
+Overview
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+Ora is a real-time AI assistant designed to join Google Meet calls and provide technical support through natural voice interaction. Built as a Chrome extension with a Firebase-connected backend and GROQ LLM integration, Ora listens passively for trigger phrases (like "Ora"), transcribes user speech using Whisper, generates responses using a large language model, and replies using realistic voice synthesis (Google TTS). It is primarily designed for IT/tech consultancy during live video calls.
 
-## Folder Structure
+Key Features
 
-The workspace contains two folders by default, where:
+- Passive voice recognition using Whisper
+- AI response generation using GROQ
+- Voice output using Google TTS
+- User authentication and session storage
+- Dashboard with meeting transcripts
+- Local relay for speech debugging
+- Installable audio setup utility
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+Project File Structure
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+- `popup.js` – Extension popup logic (login, launch)
+- `background.js` – Service worker for message routing
+- `inject.js` – Injected into Meet tab; handles listening and TTS
+- `relay.js` – Optional speech relay for local debug
+- `dash.js` – Handles dashboard display and auth state
+- `auth.js` – Firebase authentication helpers
+- `firebase_config.js` – Firebase client setup
+- `botapi.js` – Node.js backend: transcribe, respond, and speak
+- `dashboard.html` / `popup.html` / `session.html` – UI templates
+- `firebase-key.json` / `google-tts-key.json` – Service credentials
+- `package.json` – Backend dependencies
+- `vite.config.js` – Vite bundler config
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+How to Run Ora
+1. Clone or Download the Repository.
+2. Set up Firebase and Google Cloud APIs:
+   - Create a Firebase project, enable Authentication and Firestore.
+   - Download service account JSON files (`firebase-key.json`, `google-tts-key.json`).
+   - Enable Google Cloud Text-to-Speech API and Whisper transcription endpoint.
+3. Setup Environment:
+   - Place both credential files in the root directory.
+   - Run `npm install` in the backend folder.
+   - Start the backend: `npm start` or `node botapi.js`.
+4. Build the Chrome Extension:
+   - Use Vite to bundle: `vite build` or equivalent setup.
+   - Load `dist` folder into Chrome (chrome://extensions > Developer Mode > Load unpacked).
+5. Use Ora in Google Meet:
+   - Open a Google Meet tab.
+   - Click the Ora extension > Log in > Click 'Launch Ora'.
+   - Ora will join and begin listening. Say 'Ora' to get help.
+   - Speak your tech issue and receive a voice reply.
+Deployment Notes
 
-## Dependency Management
+- To deploy the backend, use Render or another Node.js host. Ensure Whisper and TTS endpoints work correctly.
+- Use VB-Cable or Voicemeeter to route Ora’s TTS audio into Meet.
+- An installer `.exe` (OraAudioSetup.exe) is included to simplify setup for new users.
+- Ensure voicemeeter is running with the Ora config file
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+Project Authors
+
+Enea Zguro, Ilyas Tahari, Elissa Jagroop, Haneen Qasem  
+SUNY University at Albany – ICSI499 Capstone (Spring 2025)  
+Instructor: Dr. Pradeep Atrey

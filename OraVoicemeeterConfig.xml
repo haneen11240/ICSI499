@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VoicemeeterRemote>
+  <Parameters>
+    <Strip0>
+      <Gain>0.0</Gain>
+      <Mute>0</Mute>
+      <Solo>0</Solo>
+      <Mono>0</Mono>
+      <A1>1</A1>
+      <A2>0</A2>
+      <A3>0</A3>
+      <B1>1</B1>
+      <B2>0</B2>
+    </Strip0>
+
+    <Strip5>
+      <Gain>0.0</Gain>
+      <Mute>0</Mute>
+      <Solo>0</Solo>
+      <Mono>0</Mono>
+      <A1>0</A1>
+      <A2>0</A2>
+      <A3>0</A3>
+      <B1>1</B1>
+      <B2>0</B2>
+    </Strip5>
+
+    <Bus0>
+      <Gain>0.0</Gain>
+      <Mute>0</Mute>
+      <Mono>0</Mono>
+    </Bus0>
+
+    <Bus3>
+      <Gain>0.0</Gain>
+      <Mute>0</Mute>
+      <Mono>0</Mono>
+    </Bus3>
+  </Parameters>
+</VoicemeeterRemote>

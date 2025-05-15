@@ -1,4 +1,24 @@
-// dash.js
+/**
+ * Ora: AI Technical Consultant for Google Meet
+ * 
+ * File: dash.js
+ * Purpose: Logic for dashboard html file
+ * 
+ * Description:
+ * Displays login/auth UI, fetches and renders meeting transcripts from Firestore, and checks for audio routing tools like VB-Cable or VoiceMeeter.
+ * 
+ * Authors:
+ * - Enea Zguro
+ * - Ilyas Tahari
+ * - Elissa Jagroop
+ * - Haneen Qasem
+ * 
+ * Institution: SUNY University at Albany  
+ * Course: ICSI499 Capstone Project, Spring 2025  
+ * Instructor: Dr. Pradeep Atrey
+ */
+
+// Firebase imports
 import { loginWithGoogle, loginWithEmail, signUpWithEmail, logout, onUserStateChange } from './auth.js';
 import { db } from './firebase_config.js';
 import { collection, query, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
@@ -9,6 +29,7 @@ const dashboard = document.getElementById('dashboard');
 const userEmail = document.getElementById('user-email');
 const transcripts = document.getElementById('transcripts');
 
+// Login/signup button logic for dashboard html
 window.signInGoogle = async () => {
   try { await loginWithGoogle(); } catch (err) { alert(err.message); }
 };
@@ -37,6 +58,7 @@ async function saveUserProfile(user) {
   }, { merge: true });
 }
 
+// Update dashboard UI
 onUserStateChange(user => {
   if (user) {
     saveUserProfile(user);
@@ -52,6 +74,7 @@ onUserStateChange(user => {
   }
 });
 
+// Load user transcripts
 function loadTranscripts(userId) {
   const q = query(collection(db, `users/${userId}/meetings`), orderBy("createdAt", "desc"));
 
@@ -77,7 +100,7 @@ function loadTranscripts(userId) {
   });
 }
 
-// Optional: Setup modal for Ora audio
+// Ora modal prompt for installation display/hide
 function showOraSetupModal() {
   const modal = document.getElementById("oraSetupModal");
   modal.style.display = "block";
@@ -89,10 +112,12 @@ function hideOraSetupModal() {
   localStorage.setItem("ora_setup_complete", "true");
 }
 
+// Ora test for voice drivers
 async function runOraTest() {
   await navigator.mediaDevices.getUserMedia({ audio: true });
   const devices = await navigator.mediaDevices.enumerateDevices();
 
+  // Look for drivers
   const hasCable = devices.some(d =>
     d.label.toLowerCase().includes("cable") ||
     d.label.toLowerCase().includes("voice") ||
@@ -104,11 +129,11 @@ async function runOraTest() {
 
   setTimeout(() => {
     if (hasCable) {
-      alert("✅ Virtual mic and/or VoiceMeeter detected. You're ready!");
+      alert("Drivers detected!");
     } else {
-      const downloadConfirm = confirm("⚠️ No VB-Cable or VoiceMeeter detected. Do you want to download and install the audio setup?");
+      const downloadConfirm = confirm("Missing drivers. Do you want to download and install the audio setup?");
       if (downloadConfirm) {
-        window.open("OraAudioSetup.exe", "_blank"); // This assumes the file is in your public directory
+        window.open("OraAudioSetup.exe", "_blank");
       }
     }
   }, 4000);

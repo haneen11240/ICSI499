@@ -1,3 +1,24 @@
+/**
+ * Ora: AI Technical Consultant for Google Meet
+ * 
+ * File: popup.js
+ * Purpose: Popup UI logic for the Chrome extension.
+ * 
+ * Description:
+ * Handles user login (Google/email), logout, and launches Ora bot in active Google Meet tabs via message passing.
+ * 
+ * Authors:
+ * - Enea Zguro
+ * - Ilyas Tahari
+ * - Elissa Jagroop
+ * - Haneen Qasem
+ * 
+ * Institution: SUNY University at Albany  
+ * Course: ICSI499 Capstone Project, Spring 2025  
+ * Instructor: Dr. Pradeep Atrey
+ */
+
+// Firebase INIT
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -20,66 +41,71 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// User status (in/out)
 onAuthStateChanged(auth, (user) => {
+  // Signed in
   if (user) {
     document.getElementById("auth-section").style.display = "none";
     document.getElementById("main-section").style.display = "block";
     document.getElementById("user-email").innerText = user.email;
-  } else {
+  } else { // Signed out
     document.getElementById("auth-section").style.display = "block";
     document.getElementById("main-section").style.display = "none";
   }
 });
 
+// Login logic
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    alert("✅ Logged in successfully.");
+    alert("Logged in successfully!");
   } catch (error) {
-    console.error(error);
-    alert("❌ Login failed: " + error.message);
+    alert("Login failed: " + error.message);
   }
 });
 
+// Signup logic
 document.getElementById("signupBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
   try {
     await createUserWithEmailAndPassword(auth, email, password);
-    alert("✅ Account created successfully.");
+    alert("Account created successfully!");
   } catch (error) {
-    console.error(error);
-    alert("❌ Signup failed: " + error.message);
+    alert("Signup failed: " + error.message);
   }
 });
 
+// Logout logic
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
-  alert("✅ Logged out successfully.");
+  alert("Logged out successfully!");
 });
 
+// Launch Ora
 document.getElementById("launchBtn").addEventListener("click", async () => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const meetUrl = tabs[0].url;
 
+    // Ensure meet is open
     if (!meetUrl.includes("https://meet.google.com")) {
-      alert("⚠️ Please open a Google Meet tab first.");
+      alert("Please open a Google Meet tab first.");
       return;
     }
 
     const user = auth.currentUser;
     if (!user) {
-      alert("⚠️ Please sign in first!");
+      alert("Sign in first!");
       return;
     }
 
     const idToken = await user.getIdToken();
 
-    try {
+    try { // Ora server request
       const response = await fetch("http://localhost:5000/start-bot", {
         method: "POST",
         headers: {
@@ -97,30 +123,26 @@ document.getElementById("launchBtn").addEventListener("click", async () => {
         throw new Error(`Server error: ${errorText}`);
       }
 
-      console.log("✅ Launch Ora backend responded successfully.");
-
-      // ✅ Inject UID into the Meet tab first
+      // Inject UID into the meet
       chrome.scripting.executeScript(
         {
-          target: { tabId: tabs[0].id },
+          target: { tabId: tabs[0].id }, // Select active meet tab (assuming many can be open)
           func: (uid) => {
             localStorage.setItem("ora_uid", uid);
-            console.log("✅ Injected UID into localStorage:", uid);
           },
           args: [user.uid],
         },
         () => {
-          // ✅ Now inject inject.js
+          // Inject inject.js
           chrome.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            files: ["inject.js"],
+            files: ["inject.js"], // Clientside listener for audio logic
           });
         }
       );
 
-      alert("✅ Ora is now active on your Meet!");
+      alert("Ora is now active on your Meet!");
     } catch (error) {
-      console.error("❌ Failed to launch Ora:", error);
       alert("Failed to launch Ora. Please try again.");
     }
   });

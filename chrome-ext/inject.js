@@ -1,14 +1,35 @@
+/**
+ * Ora: AI Technical Consultant for Google Meet
+ * 
+ * File: inject.js
+ * Purpose: Injected script for Google Meet pages.
+ * 
+ * Description:
+ * Manages mic access, performs speech-to-text using Whisper, triggers AI responses, and plays TTS audio replies via virtual mic.
+ * 
+ * Authors:
+ * - Enea Zguro
+ * - Ilyas Tahari
+ * - Elissa Jagroop
+ * - Haneen Qasem
+ * 
+ * Institution: SUNY University at Albany  
+ * Course: ICSI499 Capstone Project, Spring 2025  
+ * Instructor: Dr. Pradeep Atrey
+ */
+
 (async function () {
+  // Only inject into meet
   if (!window.location.href.includes("meet.google.com")) return;
 
+  // Check UID
   const uid = localStorage.getItem("ora_uid");
   if (!uid) {
-    console.warn("UID not found — aborting Ora inject.");
     return;
   }
 
+  // Session ID for firebase
   const sessionId = new URL(window.location.href).pathname.replace(/\//g, "-");
-  console.log("Ora script injected. Waiting for launch trigger...");
 
   const options = { mimeType: "audio/webm;codecs=opus" };
   let stream = null;
@@ -18,6 +39,7 @@
   let fullTranscript = "";
   let isResponding = false;
 
+  // Set up mic access and permissions, stream, and visual audio bar detector
   async function setupStream() {
     if (!stream) {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -31,6 +53,7 @@
     }
   }
 
+  // Simple audio meter to visualize voice
   function createAudioMeter() {
     const existing = document.getElementById("ora-meter");
     if (existing) return;
@@ -74,6 +97,7 @@
     const mediaRecorder = new MediaRecorder(stream, options);
     const chunks = [];
 
+    // Audio chunks
     mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunks.push(e.data);
     };
@@ -81,13 +105,14 @@
     mediaRecorder.onstop = async () => {
       if (!isListening || isResponding) return;
 
+      // Audio package for whisper
       const blob = new Blob(chunks, { type: "audio/webm" });
       const formData = new FormData();
       formData.append("audio", blob, "chunk.webm");
       formData.append("uid", uid);
       formData.append("sessionId", sessionId);
 
-      try {
+      try { // Trigger word/phrase detection
         const transcriptRes = await fetch("https://icsi499.onrender.com/local-transcript", {
           method: "POST",
           body: formData,
@@ -96,12 +121,13 @@
         const transcriptData = await transcriptRes.json();
         const transcript = transcriptData.transcript?.trim();
 
+        // Add to transcript for firebase
         if (transcript) {
           transcriptCache.push(transcript);
           fullTranscript += `User said: ${transcript}\n`;
-          console.log("Transcript:", transcript);
         }
 
+        // Trigger Ora, send transcript for interpertation
         if (transcriptData.triggered && transcript) {
           isResponding = true;
 
@@ -115,8 +141,8 @@
 
           if (reply) {
             fullTranscript += `Ora said: ${reply}\n\n`;
-            console.log("Ora reply:", reply);
 
+            // TTS API call
             const ttsRes = await fetch("https://icsi499.onrender.com/tts", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -128,7 +154,7 @@
               const audioUrl = URL.createObjectURL(audioBlob);
               const audio = new Audio(audioUrl);
 
-              try {
+              try { // Route response to virtual cable through voicemeeter
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const vbDevice = devices.find(d =>
                   d.label.toLowerCase().includes("voicemeeter input") && !d.label.toLowerCase().includes("aux")
@@ -136,23 +162,18 @@
 
                 if (vbDevice && audio.setSinkId) {
                   await audio.setSinkId(vbDevice.deviceId);
-                  console.log("🔁 Ora routed to:", vbDevice.label);
                 } else {
-                  console.warn("⚠️ Could not find exact Voicemeeter Input — fallback to default");
                 }
 
-                audio.onplay = () => console.log("✅ Ora audio playback started");
+                // Play
                 audio.onended = () => {
-                  console.log("✅ Ora audio playback finished");
                   isResponding = false;
                   if (isListening) startRecordingLoop();
                 };
 
                 audio.play();
-              } catch (err) {
-                console.error("Failed to set VB-Cable as output device:", err);
+              } catch (err) { // Default mic fallback
                 audio.onended = () => {
-                  console.log("✅ Ora audio playback finished (fallback)");
                   isResponding = false;
                   if (isListening) startRecordingLoop();
                 };
@@ -163,23 +184,22 @@
             isResponding = false;
             if (isListening) startRecordingLoop();
           }
-        } else {
+        } else { // Trigger not detected
           setTimeout(startRecordingLoop, 1000);
         }
       } catch (e) {
-        console.error("Error sending audio:", e);
         setTimeout(startRecordingLoop, 1000);
       }
     };
 
+    // Reloop continous 5 seconds
     mediaRecorder.start();
-    console.log("Recording started");
     setTimeout(() => {
       mediaRecorder.stop();
-      console.log("Recording stopped");
     }, 5000);
   }
 
+  // Start/stop Ora logic
   window.addEventListener("message", async (event) => {
     if (event.source !== window) return;
 
@@ -187,7 +207,6 @@
       await setupStream();
       if (!isListening) {
         isListening = true;
-        console.log("Ora listening started");
         startRecordingLoop();
       }
     }
@@ -195,8 +214,8 @@
     if (event.data.type === "ORA_STOP") {
       isListening = false;
       isResponding = false;
-      console.log("Ora listening stopped");
 
+      // Get names of participants for firebase
       const names = Array.from(document.querySelectorAll('[role="listitem"][aria-label]'))
         .map(el => el.getAttribute("aria-label"))
         .filter(Boolean);
@@ -208,7 +227,7 @@
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const sessionName = `Meeting with ${participants} on ${dateStr} at ${timeStr}`;
 
-      try {
+      try { //Firebase log and end Ora session
         const res = await fetch("https://icsi499.onrender.com/end-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -217,12 +236,9 @@
 
         const data = await res.json();
         if (data.success) {
-          console.log("✅ Session saved to Firebase.");
         } else {
-          console.warn("⚠️ Error saving session:", data.message);
         }
       } catch (err) {
-        console.error("❌ Failed to send full transcript:", err);
       }
     }
   });
